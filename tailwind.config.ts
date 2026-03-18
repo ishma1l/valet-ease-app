@@ -60,6 +60,10 @@ export default {
           foreground: "hsl(var(--warning-foreground))",
           muted: "hsl(var(--warning-muted))",
         },
+        premium: {
+          DEFAULT: "hsl(var(--premium))",
+          foreground: "hsl(var(--premium-foreground))",
+          muted: "hsl(var(--premium-muted))",
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
           foreground: "hsl(var(--sidebar-foreground))",
