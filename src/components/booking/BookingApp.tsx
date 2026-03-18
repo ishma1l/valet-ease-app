@@ -204,6 +204,27 @@ const BookingApp = () => {
                     </p>
                   </div>
                 </button>
+
+                {/* Pricing Breakdown */}
+                <div className="mt-2 bg-card rounded-2xl ring-1 ring-border p-5 space-y-3">
+                  <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                    Price Summary
+                  </label>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-foreground">{selectedService?.title}</span>
+                    <span className="font-semibold tabular-nums">£{selectedService?.price || 0}</span>
+                  </div>
+                  {booking.express && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-foreground">Express Service</span>
+                      <span className="font-semibold tabular-nums text-warning">£7</span>
+                    </div>
+                  )}
+                  <div className="border-t border-muted pt-3 flex justify-between items-center">
+                    <span className="font-bold text-foreground">Total</span>
+                    <span className="text-xl font-extrabold tabular-nums">£{total}</span>
+                  </div>
+                </div>
               </div>
             </StepWrapper>
           )}
