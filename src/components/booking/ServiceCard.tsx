@@ -12,47 +12,63 @@ interface ServiceCardProps {
   title: string;
   description: string;
   price: number;
+  tag?: string;
   selected: boolean;
   onClick: (id: string) => void;
 }
 
-const ServiceCard = ({ id, title, description, price, selected, onClick }: ServiceCardProps) => {
+const ServiceCard = ({ id, title, description, price, tag, selected, onClick }: ServiceCardProps) => {
   const Icon = SERVICE_ICONS[id] || Droplets;
 
   return (
     <motion.button
       onClick={() => onClick(id)}
-      whileTap={{ scale: 0.98 }}
+      whileTap={{ scale: 0.97 }}
       transition={{ duration: 0.15 }}
-      className={`relative w-full p-4 rounded-2xl flex items-center gap-4 transition-all duration-200 text-left
+      className={`relative w-full p-5 rounded-2xl flex items-center gap-4 transition-all duration-250 text-left overflow-hidden
         ${selected
-          ? "bg-accent ring-2 ring-primary"
-          : "card-surface hover:shadow-[var(--shadow-elevated)]"}`}
-      style={selected ? { boxShadow: "var(--shadow-active)" } : undefined}
+          ? "bg-card"
+          : "bg-card hover:translate-y-[-2px]"}`}
+      style={{
+        border: selected ? "2px solid hsl(var(--primary))" : "1.5px solid hsl(var(--border))",
+        boxShadow: selected ? "var(--shadow-glow)" : "var(--shadow-card)",
+      }}
     >
+      {/* Popular tag */}
+      {tag && (
+        <span className="absolute top-3 right-3 text-[10px] font-bold uppercase tracking-wider bg-primary text-primary-foreground px-2 py-0.5 rounded-full">
+          {tag}
+        </span>
+      )}
+      
       <div
-        className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 transition-colors duration-200
+        className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 transition-all duration-200
           ${selected ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}
       >
-        <Icon size={20} />
+        <Icon size={22} />
       </div>
       <div className="flex-1 min-w-0">
-        <span className={`font-bold text-[0.95rem] block ${selected ? "text-accent-foreground" : "text-foreground"}`}>
+        <span className={`font-bold text-base block leading-tight ${selected ? "text-foreground" : "text-foreground"}`}>
           {title}
         </span>
-        <span className="text-sm text-muted-foreground">{description}</span>
+        <span className="text-[13px] text-muted-foreground mt-0.5 block">{description}</span>
       </div>
-      <div className="flex items-center gap-2 shrink-0">
-        <span className="text-lg font-extrabold tabular-nums">£{price}</span>
-        {selected && (
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            className="w-6 h-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center"
-          >
-            <Check size={14} strokeWidth={3} />
-          </motion.div>
-        )}
+      <div className="flex items-center gap-2.5 shrink-0">
+        <div className="text-right">
+          <span className="text-xl font-extrabold tabular-nums block leading-none">£{price}</span>
+        </div>
+        <div
+          className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 transition-all duration-200
+            ${selected
+              ? "bg-primary text-primary-foreground scale-100"
+              : "border-2 border-border scale-100"}`}
+        >
+          {selected && (
+            <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}>
+              <Check size={14} strokeWidth={3} />
+            </motion.div>
+          )}
+        </div>
       </div>
     </motion.button>
   );
