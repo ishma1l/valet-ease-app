@@ -10,6 +10,7 @@ import {
 import StepWrapper from "./StepWrapper";
 import ServiceCard from "./ServiceCard";
 import TimeWindowCard from "./TimeWindowCard";
+import TrustBanner from "./TrustBanner";
 
 interface BookingState {
   postcode: string;
