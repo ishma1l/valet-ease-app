@@ -168,6 +168,8 @@ const BookingApp = () => {
                     </motion.div>
                   ))}
                 </div>
+
+                <TrustBanner delay={0.5} />
               </div>
             </StepWrapper>
           )}
