@@ -45,6 +45,26 @@ const BookingApp = () => {
   const nextStep = () => setStep((s) => s + 1);
   const prevStep = () => setStep((s) => s - 1);
 
+  const confirmBooking = async () => {
+    const { error } = await supabase.from("bookings").insert({
+      customer_name: booking.details.name,
+      phone: booking.details.phone,
+      address: booking.details.address,
+      postcode: booking.postcode,
+      service: booking.service!,
+      service_price: selectedService?.price || 0,
+      time_window: booking.window,
+      booking_date: booking.date,
+      express: booking.express,
+      total_price: total,
+    });
+    if (error) {
+      toast.error("Failed to save booking. Please try again.");
+      return;
+    }
+    setStep(3);
+  };
+
   const selectedService = SERVICES.find((s) => s.id === booking.service);
   const total = (selectedService?.price || 0) + (booking.express ? 7 : 0);
 
