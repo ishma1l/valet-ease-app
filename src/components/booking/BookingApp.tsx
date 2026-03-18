@@ -10,6 +10,7 @@ import {
 import StepWrapper from "./StepWrapper";
 import ServiceCard from "./ServiceCard";
 import TimeWindowCard from "./TimeWindowCard";
+import TrustBanner from "./TrustBanner";
 
 interface BookingState {
   postcode: string;
@@ -167,6 +168,8 @@ const BookingApp = () => {
                     </motion.div>
                   ))}
                 </div>
+
+                <TrustBanner delay={0.5} />
               </div>
             </StepWrapper>
           )}
@@ -384,6 +387,15 @@ const BookingApp = () => {
                     <span className="text-muted-foreground text-sm">Total Paid</span>
                     <span className="font-extrabold text-xl tabular-nums">£{total}</span>
                   </div>
+                </motion.div>
+
+                <motion.div
+                  initial={{ y: 10, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.6 }}
+                  className="w-full mt-2"
+                >
+                  <TrustBanner items={[0, 1]} delay={0.65} />
                 </motion.div>
 
                 <motion.button
