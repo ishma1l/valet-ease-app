@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { ReactNode } from "react";
 
-const EASING = [0.4, 0, 0.2, 1];
+const EASING: [number, number, number, number] = [0.4, 0, 0.2, 1];
 
 interface StepWrapperProps {
   children: ReactNode;
