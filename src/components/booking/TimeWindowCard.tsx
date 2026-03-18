@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { Sun, CloudSun, Sunset, Check } from "lucide-react";
+import { forwardRef } from "react";
 
 const WINDOW_ICONS: Record<string, typeof Sun> = {
   morning: Sun,
@@ -15,49 +16,46 @@ interface TimeWindowCardProps {
   onClick: (id: string) => void;
 }
 
-const TimeWindowCard = ({ id, label, time, selected, onClick }: TimeWindowCardProps) => {
-  const Icon = WINDOW_ICONS[id] || Sun;
+const TimeWindowCard = forwardRef<HTMLButtonElement, TimeWindowCardProps>(
+  ({ id, label, time, selected, onClick }, ref) => {
+    const Icon = WINDOW_ICONS[id] || Sun;
 
-  return (
-    <motion.button
-      onClick={() => onClick(id)}
-      whileTap={{ scale: 0.97 }}
-      transition={{ duration: 0.15 }}
-      className={`w-full p-4 rounded-2xl flex items-center gap-4 transition-all duration-200 text-left
-        ${selected
-          ? "bg-primary text-primary-foreground"
-          : "bg-card hover:translate-y-[-1px]"}`}
-      style={{
-        border: selected ? "2px solid hsl(var(--primary))" : "1.5px solid hsl(var(--border))",
-        boxShadow: selected
-          ? "0 4px 20px rgba(37,99,235,0.25)"
-          : "var(--shadow-card)",
-      }}
-    >
-      <div
-        className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-colors duration-200
-          ${selected ? "bg-primary-foreground/20" : "bg-muted"}`}
+    return (
+      <motion.button
+        ref={ref}
+        onClick={() => onClick(id)}
+        whileTap={{ scale: 0.98 }}
+        className={`w-full rounded-2xl p-5 flex items-center gap-4 text-left transition-all duration-200
+          ${selected ? "ring-2 ring-primary bg-accent" : "bg-card hover:bg-muted/50"}`}
+        style={{
+          boxShadow: selected ? "var(--shadow-glow)" : "var(--shadow-card)",
+        }}
       >
-        <Icon size={18} className={selected ? "text-primary-foreground" : "text-muted-foreground"} />
-      </div>
-      <div className="flex-1">
-        <span className="font-bold block leading-tight">{label}</span>
-        <span className={`text-sm ${selected ? "text-primary-foreground/70" : "text-muted-foreground"}`}>{time}</span>
-      </div>
-      <div
-        className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 transition-all duration-200
-          ${selected
-            ? "bg-primary-foreground/20 text-primary-foreground"
-            : "border-2 border-border"}`}
-      >
-        {selected && (
-          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}>
-            <Check size={14} strokeWidth={3} />
-          </motion.div>
-        )}
-      </div>
-    </motion.button>
-  );
-};
+        <div
+          className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 transition-colors duration-200
+            ${selected ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}
+        >
+          <Icon size={20} />
+        </div>
+        <div className="flex-1">
+          <span className="font-bold text-[15px] block text-foreground">{label}</span>
+          <span className="text-muted-foreground text-[13px] mt-0.5 block">{time}</span>
+        </div>
+        <div
+          className={`w-6 h-6 rounded-full flex items-center justify-center shrink-0 transition-all duration-200
+            ${selected ? "bg-primary text-primary-foreground" : "border-2 border-muted-foreground/30"}`}
+        >
+          {selected && (
+            <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 400 }}>
+              <Check size={13} strokeWidth={3} />
+            </motion.div>
+          )}
+        </div>
+      </motion.button>
+    );
+  }
+);
+
+TimeWindowCard.displayName = "TimeWindowCard";
 
 export default TimeWindowCard;

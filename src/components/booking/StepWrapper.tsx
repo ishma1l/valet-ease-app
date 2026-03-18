@@ -1,7 +1,5 @@
 import { motion } from "framer-motion";
-import { ReactNode } from "react";
-
-const EASING: [number, number, number, number] = [0.4, 0, 0.2, 1];
+import { forwardRef, ReactNode } from "react";
 
 interface StepWrapperProps {
   children: ReactNode;
@@ -9,42 +7,47 @@ interface StepWrapperProps {
   subtitle?: string;
 }
 
-const StepWrapper = ({ children, title, subtitle }: StepWrapperProps) => (
-  <motion.div
-    initial={{ x: 30, opacity: 0, filter: "blur(6px)" }}
-    animate={{ x: 0, opacity: 1, filter: "blur(0px)" }}
-    exit={{ x: -30, opacity: 0, filter: "blur(6px)" }}
-    transition={{ duration: 0.4, ease: EASING }}
-    className="flex flex-col gap-6 w-full"
-  >
-    <header>
-      <motion.h1
-        initial={{ y: 10, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 0.08, duration: 0.35, ease: EASING }}
-        className="text-[1.75rem] font-extrabold tracking-[-0.03em] text-foreground leading-[1.15]"
-      >
-        {title}
-      </motion.h1>
-      {subtitle && (
-        <motion.p
-          initial={{ y: 6, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.14, duration: 0.3, ease: EASING }}
-          className="text-muted-foreground text-[0.9rem] mt-1.5 leading-relaxed"
-        >
-          {subtitle}
-        </motion.p>
-      )}
-    </header>
+const StepWrapper = forwardRef<HTMLDivElement, StepWrapperProps>(
+  ({ children, title, subtitle }, ref) => (
     <motion.div
-      initial={{ y: 14, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ delay: 0.2, duration: 0.4, ease: EASING }}
+      ref={ref}
+      initial={{ x: 40, opacity: 0 }}
+      animate={{ x: 0, opacity: 1 }}
+      exit={{ x: -40, opacity: 0 }}
+      transition={{ duration: 0.35, ease: [0.25, 0.1, 0.25, 1] }}
+      className="flex flex-col gap-8 w-full pt-2"
     >
-      {children}
+      <header className="space-y-2">
+        <motion.h1
+          initial={{ y: 12, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.05, duration: 0.3 }}
+          className="text-[1.75rem] font-extrabold tracking-[-0.03em] text-foreground leading-[1.1]"
+        >
+          {title}
+        </motion.h1>
+        {subtitle && (
+          <motion.p
+            initial={{ y: 8, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.1, duration: 0.3 }}
+            className="text-muted-foreground text-[15px] leading-relaxed"
+          >
+            {subtitle}
+          </motion.p>
+        )}
+      </header>
+      <motion.div
+        initial={{ y: 16, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.15, duration: 0.35 }}
+      >
+        {children}
+      </motion.div>
     </motion.div>
-  </motion.div>
+  )
 );
+
+StepWrapper.displayName = "StepWrapper";
 
 export default StepWrapper;
