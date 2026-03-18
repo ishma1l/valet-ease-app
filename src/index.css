@@ -116,7 +116,8 @@
 
 @layer components {
   .glass-surface {
-    @apply bg-card/80 backdrop-blur-xl;
+    background-color: hsla(var(--card), 0.8);
+    @apply backdrop-blur-xl;
   }
 
   .input-field {
