@@ -389,6 +389,15 @@ const BookingApp = () => {
                   </div>
                 </motion.div>
 
+                <motion.div
+                  initial={{ y: 10, opacity: 0 }}
+                  animate={{ y: 0, opacity: 1 }}
+                  transition={{ delay: 0.6 }}
+                  className="w-full mt-2"
+                >
+                  <TrustBanner items={[0, 1]} delay={0.65} />
+                </motion.div>
+
                 <motion.button
                   initial={{ y: 10, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
