@@ -14,7 +14,7 @@ const config: Config = {
     },
     extend: {
       fontFamily: {
-        sans: ['"Public Sans"', "system-ui", "-apple-system", "sans-serif"],
+        sans: ['"Plus Jakarta Sans"', "system-ui", "-apple-system", "sans-serif"],
       },
       colors: {
         border: "hsl(var(--border))",
