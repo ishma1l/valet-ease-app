@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import { AnimatePresence } from "framer-motion";
 import {
   MapPin, Clock, CheckCircle2,
@@ -42,6 +44,26 @@ const BookingApp = () => {
 
   const nextStep = () => setStep((s) => s + 1);
   const prevStep = () => setStep((s) => s - 1);
+
+  const confirmBooking = async () => {
+    const { error } = await supabase.from("bookings").insert({
+      customer_name: booking.details.name,
+      phone: booking.details.phone,
+      address: booking.details.address,
+      postcode: booking.postcode,
+      service: booking.service!,
+      service_price: selectedService?.price || 0,
+      time_window: booking.window,
+      booking_date: booking.date,
+      express: booking.express,
+      total_price: total,
+    });
+    if (error) {
+      toast.error("Failed to save booking. Please try again.");
+      return;
+    }
+    setStep(3);
+  };
 
   const selectedService = SERVICES.find((s) => s.id === booking.service);
   const total = (selectedService?.price || 0) + (booking.express ? 7 : 0);
@@ -301,7 +323,7 @@ const BookingApp = () => {
             </div>
             <button
               disabled={!isStepValid()}
-              onClick={nextStep}
+              onClick={step === 2 ? confirmBooking : nextStep}
               className="flex-[2] bg-primary disabled:bg-muted disabled:text-muted-foreground text-primary-foreground py-4 px-6 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
             >
               {step === 2 ? "Confirm Booking" : "Continue"}
