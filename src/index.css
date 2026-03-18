@@ -7,47 +7,52 @@
 @layer base {
   :root {
     --background: 210 20% 97%;
-    --foreground: 224 71% 4%;
+    --foreground: 220 25% 10%;
 
     --card: 0 0% 100%;
-    --card-foreground: 224 71% 4%;
+    --card-foreground: 220 25% 10%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 224 71% 4%;
+    --popover-foreground: 220 25% 10%;
 
-    --primary: 221 100% 50%;
+    --primary: 217 91% 50%;
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 221 100% 60%;
+    --primary-hover: 217 91% 44%;
 
-    --secondary: 210 20% 93%;
-    --secondary-foreground: 224 71% 4%;
+    --secondary: 210 18% 93%;
+    --secondary-foreground: 220 25% 10%;
 
-    --muted: 215 20% 94%;
-    --muted-foreground: 215 16% 47%;
+    --muted: 215 18% 94%;
+    --muted-foreground: 215 14% 50%;
 
-    --accent: 221 100% 96%;
-    --accent-foreground: 221 100% 35%;
+    --accent: 217 95% 95%;
+    --accent-foreground: 217 91% 40%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 0 0% 0% / 0.06;
-    --input: 0 0% 0% / 0.06;
-    --ring: 221 100% 50%;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 217 91% 50%;
 
     --radius: 1rem;
 
     --success: 152 69% 41%;
     --success-foreground: 0 0% 100%;
-    --success-muted: 149 80% 94%;
+    --success-muted: 149 52% 94%;
 
     --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
-    --warning-muted: 48 96% 92%;
+    --warning-muted: 48 100% 94%;
 
-    --shadow-card: 0 1px 3px rgba(0,0,0,.03), 0 4px 12px rgba(0,0,0,.04);
-    --shadow-elevated: 0 8px 30px rgba(0,0,0,.06), 0 0 0 1px rgba(0,0,0,.03);
-    --shadow-active: 0 0 0 2px hsl(221, 100%, 50%), 0 4px 16px rgba(0,82,255,0.15);
+    --premium: 262 83% 58%;
+    --premium-foreground: 0 0% 100%;
+    --premium-muted: 262 90% 96%;
+
+    --shadow-sm: 0 1px 2px rgba(0,0,0,.04);
+    --shadow-card: 0 1px 3px rgba(0,0,0,.04), 0 4px 16px rgba(0,0,0,.04);
+    --shadow-elevated: 0 4px 24px rgba(0,0,0,.06), 0 0 0 1px rgba(0,0,0,.03);
+    --shadow-glow: 0 0 0 2px hsl(217, 91%, 50%), 0 4px 20px rgba(37,99,235,0.2);
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
@@ -66,20 +71,20 @@
     --card-foreground: 210 40% 98%;
     --popover: 225 50% 8%;
     --popover-foreground: 210 40% 98%;
-    --primary: 221 100% 55%;
+    --primary: 217 91% 55%;
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 221 100% 65%;
+    --primary-hover: 217 91% 48%;
     --secondary: 217 33% 14%;
     --secondary-foreground: 210 40% 98%;
     --muted: 217 33% 14%;
     --muted-foreground: 215 20% 55%;
-    --accent: 221 60% 15%;
-    --accent-foreground: 221 100% 75%;
+    --accent: 217 60% 15%;
+    --accent-foreground: 217 91% 75%;
     --destructive: 0 63% 31%;
     --destructive-foreground: 210 40% 98%;
-    --border: 0 0% 100% / 0.08;
-    --input: 0 0% 100% / 0.08;
-    --ring: 221 100% 55%;
+    --border: 220 13% 18%;
+    --input: 220 13% 18%;
+    --ring: 217 91% 55%;
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;
@@ -115,23 +120,48 @@
   }
 
   .input-field {
-    @apply w-full p-4 rounded-2xl bg-card ring-1 ring-border
-      focus:ring-2 focus:ring-primary outline-none transition-all duration-200
-      placeholder:text-muted-foreground font-medium;
-    box-shadow: var(--shadow-card);
+    @apply w-full px-4 py-4 rounded-2xl bg-card
+      focus:outline-none transition-all duration-200
+      placeholder:text-muted-foreground font-medium text-[0.95rem];
+    border: 1.5px solid hsl(var(--border));
+    box-shadow: var(--shadow-sm);
   }
 
   .input-field:focus {
-    box-shadow: var(--shadow-active);
+    border-color: hsl(var(--primary));
+    box-shadow: var(--shadow-glow);
   }
 
   .card-surface {
-    @apply bg-card rounded-2xl ring-1 ring-border;
+    @apply bg-card rounded-2xl;
+    border: 1px solid hsl(var(--border));
     box-shadow: var(--shadow-card);
   }
 
   .card-elevated {
     @apply bg-card rounded-2xl;
     box-shadow: var(--shadow-elevated);
+  }
+
+  .btn-primary {
+    @apply bg-primary text-primary-foreground font-bold rounded-2xl
+      transition-all duration-200 flex items-center justify-center gap-2;
+    box-shadow: 0 4px 14px rgba(37,99,235,0.25);
+  }
+
+  .btn-primary:hover {
+    background-color: hsl(var(--primary-hover));
+    box-shadow: 0 6px 20px rgba(37,99,235,0.35);
+    transform: translateY(-1px);
+  }
+
+  .btn-primary:active {
+    transform: translateY(0) scale(0.98);
+  }
+
+  .btn-primary:disabled {
+    @apply bg-muted text-muted-foreground;
+    box-shadow: none;
+    transform: none;
   }
 }
