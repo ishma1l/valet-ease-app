@@ -323,7 +323,7 @@ const BookingApp = () => {
             </div>
             <button
               disabled={!isStepValid()}
-              onClick={nextStep}
+              onClick={step === 2 ? confirmBooking : nextStep}
               className="flex-[2] bg-primary disabled:bg-muted disabled:text-muted-foreground text-primary-foreground py-4 px-6 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all active:scale-[0.98]"
             >
               {step === 2 ? "Confirm Booking" : "Continue"}
