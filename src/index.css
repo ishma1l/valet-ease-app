@@ -116,7 +116,7 @@
 
 @layer components {
   .glass-surface {
-    background-color: hsla(var(--card), 0.8);
+    background-color: hsl(var(--card) / 0.8);
     @apply backdrop-blur-xl;
   }
 
