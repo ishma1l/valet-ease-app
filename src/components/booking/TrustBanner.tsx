@@ -7,9 +7,9 @@ interface TrustItem {
 }
 
 const TRUST_ITEMS: TrustItem[] = [
-  { icon: ShieldCheck, text: "Vetted local professionals" },
-  { icon: Bell, text: "30-minute arrival notice" },
-  { icon: Users, text: "Trusted by local customers" },
+  { icon: ShieldCheck, text: "Vetted professionals" },
+  { icon: Bell, text: "30-min arrival notice" },
+  { icon: Users, text: "Trusted locally" },
 ];
 
 interface TrustBannerProps {
@@ -27,11 +27,11 @@ const TrustBanner = ({ items, delay = 0, variant = "default" }: TrustBannerProps
         initial={{ y: 6, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay, duration: 0.3 }}
-        className="flex flex-wrap gap-3 justify-center"
+        className="flex flex-wrap gap-4 justify-center"
       >
         {displayed.map(({ icon: Icon, text }) => (
-          <span key={text} className="flex items-center gap-1.5 text-[11px] text-muted-foreground font-medium">
-            <Icon size={13} className="text-success" />
+          <span key={text} className="flex items-center gap-1.5 text-[12px] text-muted-foreground font-medium">
+            <Icon size={14} className="text-success" />
             {text}
           </span>
         ))}
@@ -43,12 +43,8 @@ const TrustBanner = ({ items, delay = 0, variant = "default" }: TrustBannerProps
     <motion.div
       initial={{ y: 8, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
-      transition={{ delay, duration: 0.35, ease: [0.4, 0, 0.2, 1] }}
-      className="rounded-2xl p-4 space-y-3"
-      style={{
-        background: "linear-gradient(135deg, hsl(var(--success-muted)), hsl(var(--accent)))",
-        border: "1px solid hsl(var(--border))",
-      }}
+      transition={{ delay, duration: 0.35 }}
+      className="rounded-2xl bg-muted p-5 space-y-4"
     >
       {displayed.map(({ icon: Icon, text }, i) => (
         <motion.div
@@ -58,12 +54,12 @@ const TrustBanner = ({ items, delay = 0, variant = "default" }: TrustBannerProps
           transition={{ delay: delay + 0.08 * i, duration: 0.3 }}
           className="flex items-center gap-3"
         >
-          <div className="w-8 h-8 rounded-xl bg-card flex items-center justify-center shrink-0"
-            style={{ boxShadow: "var(--shadow-sm)" }}
+          <div className="w-9 h-9 rounded-xl bg-card flex items-center justify-center shrink-0"
+            style={{ boxShadow: "var(--shadow-xs)" }}
           >
-            <Icon size={15} className="text-success" />
+            <Icon size={16} className="text-success" />
           </div>
-          <span className="text-[13px] text-foreground font-medium leading-snug">{text}</span>
+          <span className="text-[13px] text-foreground font-medium">{text}</span>
         </motion.div>
       ))}
     </motion.div>
