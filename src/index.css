@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;800;900&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,7 +6,7 @@
 
 @layer base {
   :root {
-    --background: 210 40% 98%;
+    --background: 210 20% 97%;
     --foreground: 224 71% 4%;
 
     --card: 0 0% 100%;
@@ -17,36 +17,37 @@
 
     --primary: 221 100% 50%;
     --primary-foreground: 0 0% 100%;
+    --primary-glow: 221 100% 60%;
 
-    --secondary: 210 40% 96%;
+    --secondary: 210 20% 93%;
     --secondary-foreground: 224 71% 4%;
 
-    --muted: 215 20% 95%;
+    --muted: 215 20% 94%;
     --muted-foreground: 215 16% 47%;
 
     --accent: 221 100% 96%;
-    --accent-foreground: 221 100% 40%;
+    --accent-foreground: 221 100% 35%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 0 0% 0% / 0.08;
-    --input: 0 0% 0% / 0.05;
+    --border: 0 0% 0% / 0.06;
+    --input: 0 0% 0% / 0.06;
     --ring: 221 100% 50%;
 
     --radius: 1rem;
 
-    --success: 142 71% 45%;
+    --success: 152 69% 41%;
     --success-foreground: 0 0% 100%;
-    --success-muted: 142 76% 95%;
+    --success-muted: 149 80% 94%;
 
-    --warning: 45 93% 58%;
+    --warning: 38 92% 50%;
     --warning-foreground: 0 0% 100%;
-    --warning-muted: 48 96% 89%;
+    --warning-muted: 48 96% 92%;
 
-    --shadow-card: 0 0 0 1px rgba(0,0,0,.04), 0 2px 4px rgba(0,0,0,.02), 0 8px 16px rgba(0,0,0,.04);
-    --shadow-active: 0 0 0 2px hsl(221, 100%, 50%);
-    --shadow-elevated: 0 8px 30px rgba(0,0,0,.08);
+    --shadow-card: 0 1px 3px rgba(0,0,0,.03), 0 4px 12px rgba(0,0,0,.04);
+    --shadow-elevated: 0 8px 30px rgba(0,0,0,.06), 0 0 0 1px rgba(0,0,0,.03);
+    --shadow-active: 0 0 0 2px hsl(221, 100%, 50%), 0 4px 16px rgba(0,82,255,0.15);
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
@@ -61,23 +62,24 @@
   .dark {
     --background: 224 71% 4%;
     --foreground: 210 40% 98%;
-    --card: 224 71% 4%;
+    --card: 225 50% 8%;
     --card-foreground: 210 40% 98%;
-    --popover: 224 71% 4%;
+    --popover: 225 50% 8%;
     --popover-foreground: 210 40% 98%;
-    --primary: 221 100% 50%;
+    --primary: 221 100% 55%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 217 33% 17%;
+    --primary-glow: 221 100% 65%;
+    --secondary: 217 33% 14%;
     --secondary-foreground: 210 40% 98%;
-    --muted: 217 33% 17%;
-    --muted-foreground: 215 20% 65%;
-    --accent: 217 33% 17%;
-    --accent-foreground: 210 40% 98%;
+    --muted: 217 33% 14%;
+    --muted-foreground: 215 20% 55%;
+    --accent: 221 60% 15%;
+    --accent-foreground: 221 100% 75%;
     --destructive: 0 63% 31%;
     --destructive-foreground: 210 40% 98%;
-    --border: 217 33% 17%;
-    --input: 217 33% 17%;
-    --ring: 213 27% 84%;
+    --border: 0 0% 100% / 0.08;
+    --input: 0 0% 100% / 0.08;
+    --ring: 221 100% 55%;
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;
@@ -96,11 +98,40 @@
   body {
     @apply bg-background text-foreground antialiased;
     font-family: 'Public Sans', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 }
 
 @layer utilities {
   .tabular-nums {
     font-variant-numeric: tabular-nums;
+  }
+}
+
+@layer components {
+  .glass-surface {
+    @apply bg-card/80 backdrop-blur-xl;
+  }
+
+  .input-field {
+    @apply w-full p-4 rounded-2xl bg-card ring-1 ring-border
+      focus:ring-2 focus:ring-primary outline-none transition-all duration-200
+      placeholder:text-muted-foreground font-medium;
+    box-shadow: var(--shadow-card);
+  }
+
+  .input-field:focus {
+    box-shadow: var(--shadow-active);
+  }
+
+  .card-surface {
+    @apply bg-card rounded-2xl ring-1 ring-border;
+    box-shadow: var(--shadow-card);
+  }
+
+  .card-elevated {
+    @apply bg-card rounded-2xl;
+    box-shadow: var(--shadow-elevated);
   }
 }
