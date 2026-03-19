@@ -43,7 +43,7 @@ const slideVariants = {
   center: { x: 0, opacity: 1 },
   exit: (dir: number) => ({ x: dir > 0 ? -60 : 60, opacity: 0 }),
 };
-const transition = { duration: 0.35, ease: [0.22, 1, 0.36, 1] };
+const transition = { duration: 0.35, ease: [0.22, 1, 0.36, 1] as const };
 
 const BookingApp = () => {
   const [step, setStep] = useState(0);
