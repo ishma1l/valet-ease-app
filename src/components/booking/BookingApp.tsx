@@ -2,18 +2,14 @@ import { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { AnimatePresence, motion } from "framer-motion";
-import { format } from "date-fns";
+import { format, addDays, isSameDay } from "date-fns";
 import { cn } from "@/lib/utils";
 import {
   MapPin, Clock, CheckCircle2, ChevronRight, ArrowLeft, Zap,
   CalendarIcon, User, Phone, MapPinned, Sparkles,
-  Navigation, Shield, Edit3, LocateFixed,
+  Navigation, Shield, Edit3, LocateFixed, Star, Award, Users,
 } from "lucide-react";
-import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import StepWrapper from "./StepWrapper";
 import ServiceCard from "./ServiceCard";
-import TimeWindowCard from "./TimeWindowCard";
 import TrustBanner from "./TrustBanner";
 import heroImage from "@/assets/hero-car-wash.jpg";
 
@@ -29,28 +25,25 @@ interface BookingState {
 }
 
 const SERVICES = [
-  { id: "basic", title: "Basic Wash", description: "Exterior hand wash, rinse & dry", price: 15 },
-  { id: "valet", title: "Full Valet", description: "Complete interior & exterior clean", price: 25, tag: "Most Popular" },
-  { id: "premium", title: "Premium Detail", description: "Deep clean, polish & wax treatment", price: 45 },
+  { id: "basic", title: "Basic Wash", description: "Exterior hand wash, rinse & dry", price: 15, duration: "30 min", rating: 4.8, bookings: 340 },
+  { id: "valet", title: "Full Valet", description: "Complete interior & exterior clean", price: 25, tag: "Most Popular", duration: "60 min", rating: 4.9, bookings: 520 },
+  { id: "premium", title: "Premium Detail", description: "Deep clean, polish & wax treatment", price: 45, duration: "90 min", rating: 5.0, bookings: 180 },
 ];
 
 const WINDOWS = [
-  { id: "morning", label: "Morning", time: "9 am – 12 pm" },
-  { id: "afternoon", label: "Afternoon", time: "12 – 4 pm" },
-  { id: "evening", label: "Evening", time: "4 – 7 pm" },
+  { id: "morning", label: "Morning", time: "9 – 12", slots: 3 },
+  { id: "afternoon", label: "Afternoon", time: "12 – 4", slots: 5 },
+  { id: "evening", label: "Evening", time: "4 – 7", slots: 2 },
 ];
 
 const TOTAL_STEPS = 4;
 
 const slideVariants = {
-  enter: (dir: number) => ({ x: dir > 0 ? 80 : -80, opacity: 0 }),
+  enter: (dir: number) => ({ x: dir > 0 ? 60 : -60, opacity: 0 }),
   center: { x: 0, opacity: 1 },
-  exit: (dir: number) => ({ x: dir > 0 ? -80 : 80, opacity: 0 }),
+  exit: (dir: number) => ({ x: dir > 0 ? -60 : 60, opacity: 0 }),
 };
-const spring = {
-  x: { type: "spring" as const, stiffness: 300, damping: 30 },
-  opacity: { duration: 0.2 },
-};
+const transition = { duration: 0.35, ease: [0.22, 1, 0.36, 1] };
 
 const BookingApp = () => {
   const [step, setStep] = useState(0);
@@ -102,28 +95,24 @@ const BookingApp = () => {
     setBooking({ postcode: "", service: null, date: undefined, window: "", express: false, name: "", phone: "", address: "" });
   };
 
+  // Generate next 14 days for date picker
+  const dateOptions = Array.from({ length: 14 }, (_, i) => addDays(new Date(), i + 1));
+
   /* ─── Loading ─── */
   if (submitting) {
     return (
       <div className="min-h-svh bg-background flex flex-col items-center justify-center px-6">
-        <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex flex-col items-center gap-8">
+        <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex flex-col items-center gap-6">
           <div className="relative">
             <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-              className="w-16 h-16 rounded-full border-[2.5px] border-muted border-t-foreground" />
+              className="w-14 h-14 rounded-full border-[2.5px] border-muted border-t-foreground" />
             <div className="absolute inset-0 flex items-center justify-center">
-              <Sparkles size={20} className="text-foreground" />
+              <Sparkles size={18} className="text-foreground" />
             </div>
           </div>
           <div className="text-center">
             <p className="font-bold text-lg text-foreground">Confirming your booking</p>
-            <p className="text-muted-foreground text-[14px] mt-1.5">This will only take a moment…</p>
-          </div>
-          <div className="flex gap-1.5">
-            {[0, 1, 2].map((i) => (
-              <motion.div key={i} animate={{ scale: [1, 1.4, 1], opacity: [0.3, 1, 0.3] }}
-                transition={{ duration: 1, repeat: Infinity, delay: i * 0.15 }}
-                className="w-1.5 h-1.5 rounded-full bg-foreground" />
-            ))}
+            <p className="text-muted-foreground text-sm mt-1">This will only take a moment…</p>
           </div>
         </motion.div>
       </div>
@@ -139,39 +128,38 @@ const BookingApp = () => {
           <CheckCircle2 size={44} className="text-success" />
         </motion.div>
         <motion.h1 initial={{ y: 16, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }}
-          className="text-[1.5rem] font-extrabold tracking-tight text-foreground mb-2 text-center">
-          Booking Confirmed!
+          className="text-2xl font-extrabold tracking-tight text-foreground mb-2 text-center">
+          You're all set!
         </motion.h1>
         <motion.p initial={{ y: 12, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.3 }}
-          className="text-muted-foreground text-center text-[14px] mb-8 max-w-[280px] leading-relaxed">
-          We'll text <span className="font-semibold text-foreground">{booking.phone}</span> 30 minutes before we arrive.
+          className="text-muted-foreground text-center text-sm mb-8 max-w-[280px] leading-relaxed">
+          We'll text <span className="font-semibold text-foreground">{booking.phone}</span> 30 minutes before arrival.
         </motion.p>
 
         <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.4 }}
-          className="w-full max-w-sm bg-card rounded-3xl p-6 space-y-3" style={{ boxShadow: "var(--shadow-float)" }}>
-          {[
-            { l: "Service", v: svc?.title },
-            { l: "Date", v: booking.date ? format(booking.date, "EEE, d MMM") : "" },
-            { l: "Time", v: WINDOWS.find((w) => w.id === booking.window)?.time },
-            { l: "Location", v: booking.postcode },
-            ...(booking.express ? [{ l: "Express", v: "+£7" }] : []),
-          ].map(({ l, v }, i) => (
-            <motion.div key={l} initial={{ x: -8, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.5 + i * 0.05 }}
-              className="flex justify-between items-center py-1">
-              <span className="text-muted-foreground text-[13px]">{l}</span>
-              <span className="font-semibold text-foreground text-[14px]">{v}</span>
-            </motion.div>
-          ))}
-          <div className="pt-3 mt-1 border-t border-border flex justify-between items-center">
-            <span className="font-bold text-foreground">Total</span>
-            <span className="text-2xl font-extrabold tabular-nums text-foreground">£{total}</span>
+          className="w-full max-w-sm rounded-2xl border border-border overflow-hidden">
+          <div className="bg-foreground text-background px-5 py-4 flex items-center justify-between">
+            <span className="font-bold text-sm">Booking confirmed</span>
+            <span className="font-extrabold text-lg tabular-nums">£{total}</span>
+          </div>
+          <div className="p-5 space-y-3 bg-card">
+            {[
+              { l: "Service", v: svc?.title },
+              { l: "Date", v: booking.date ? format(booking.date, "EEE, d MMM") : "" },
+              { l: "Time", v: WINDOWS.find((w) => w.id === booking.window)?.time },
+              { l: "Location", v: booking.postcode },
+            ].map(({ l, v }) => (
+              <div key={l} className="flex justify-between items-center text-sm">
+                <span className="text-muted-foreground">{l}</span>
+                <span className="font-semibold text-foreground">{v}</span>
+              </div>
+            ))}
           </div>
         </motion.div>
 
-        <motion.button initial={{ y: 12, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.7 }}
-          whileHover={{ scale: 1.02, y: -2 }} whileTap={{ scale: 0.97 }}
-          onClick={reset}
-          className="mt-6 w-full max-w-sm bg-foreground text-background font-bold text-[15px] py-4 rounded-2xl transition-shadow hover:shadow-lg">
+        <motion.button initial={{ y: 12, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.6 }}
+          whileTap={{ scale: 0.97 }} onClick={reset}
+          className="mt-6 w-full max-w-sm bg-foreground text-background font-bold text-[15px] py-4 rounded-2xl">
           Book Another Wash
         </motion.button>
       </div>
@@ -188,19 +176,24 @@ const BookingApp = () => {
           <motion.nav
             initial={{ y: -60, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: -60, opacity: 0 }}
             transition={{ type: "spring", stiffness: 300, damping: 28 }}
-            className="sticky top-0 z-30 bg-background/90 backdrop-blur-xl border-b border-border px-5 py-3.5 flex items-center gap-4">
-            <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={back}
-              className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-muted transition-colors -ml-1">
+            className="sticky top-0 z-30 bg-background/95 backdrop-blur-xl border-b border-border px-4 py-3 flex items-center gap-3">
+            <motion.button whileTap={{ scale: 0.9 }} onClick={back}
+              className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-muted transition-colors">
               <ArrowLeft size={20} />
             </motion.button>
-            <div className="flex-1">
-              <div className="h-[3px] bg-muted rounded-full overflow-hidden">
-                <motion.div className="h-full bg-foreground rounded-full" initial={false}
-                  animate={{ width: `${(Math.min(step, TOTAL_STEPS) / TOTAL_STEPS) * 100}%` }}
-                  transition={{ type: "spring", stiffness: 300, damping: 30 }} />
-              </div>
+            <div className="flex-1 flex gap-1.5">
+              {Array.from({ length: TOTAL_STEPS }, (_, i) => (
+                <motion.div key={i} className="h-1 rounded-full flex-1 overflow-hidden bg-muted">
+                  <motion.div
+                    className="h-full bg-foreground rounded-full"
+                    initial={false}
+                    animate={{ width: step > i ? "100%" : step === i ? "50%" : "0%" }}
+                    transition={{ duration: 0.4, ease: "easeOut" }}
+                  />
+                </motion.div>
+              ))}
             </div>
-            <span className="text-[12px] font-bold text-muted-foreground tabular-nums min-w-[28px] text-right">
+            <span className="text-xs font-semibold text-muted-foreground tabular-nums w-8 text-right">
               {Math.min(step, TOTAL_STEPS)}/{TOTAL_STEPS}
             </span>
           </motion.nav>
@@ -212,45 +205,62 @@ const BookingApp = () => {
 
           {/* ══════ HERO ══════ */}
           {step === 0 && (
-            <motion.div key="hero" custom={dir} variants={slideVariants} initial="enter" animate="center" exit="exit" transition={spring}
+            <motion.div key="hero" custom={dir} variants={slideVariants} initial="enter" animate="center" exit="exit" transition={transition}
               className="flex flex-col flex-1">
-              <div className="relative h-[58vh] min-h-[360px] overflow-hidden">
-                <motion.img initial={{ scale: 1.12 }} animate={{ scale: 1 }} transition={{ duration: 1.6, ease: [0.22, 1, 0.36, 1] }}
+              <div className="relative h-[52vh] min-h-[320px] overflow-hidden">
+                <motion.img initial={{ scale: 1.08 }} animate={{ scale: 1 }} transition={{ duration: 1.4, ease: [0.22, 1, 0.36, 1] }}
                   src={heroImage} alt="Premium car detailing" className="absolute inset-0 w-full h-full object-cover" />
-                <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
-                {/* Brand badge */}
+                <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
                 <motion.div initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }}
-                  className="absolute top-5 left-6 z-10">
-                  <span className="text-[13px] font-extrabold tracking-[-0.02em] text-white/90 bg-black/30 backdrop-blur-md px-4 py-2 rounded-full border border-white/10">
+                  className="absolute top-5 left-5 z-10">
+                  <span className="text-xs font-extrabold tracking-tight text-primary-foreground bg-foreground/80 backdrop-blur-md px-4 py-2 rounded-full">
                     Valet Ease
                   </span>
                 </motion.div>
               </div>
 
-              <div className="relative -mt-36 z-10 px-6 flex flex-col flex-1">
-                <motion.div initial={{ y: 24, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1, duration: 0.5 }}>
-                  <h1 className="text-[2rem] font-extrabold tracking-[-0.04em] leading-[1.08] text-foreground">
+              <div className="relative -mt-28 z-10 px-6 flex flex-col flex-1">
+                <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }}>
+                  <h1 className="text-[1.75rem] font-extrabold tracking-[-0.03em] leading-[1.1] text-foreground">
                     Premium Car Wash<br />
                     <span className="text-muted-foreground">at Your Doorstep</span>
                   </h1>
-                  <p className="text-muted-foreground text-[15px] mt-3 leading-relaxed">
+                  <p className="text-muted-foreground text-sm mt-2.5 leading-relaxed">
                     Book in under 60 seconds. We come to you.
                   </p>
                 </motion.div>
 
-                <motion.div initial={{ y: 14, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.35 }} className="mt-6">
-                  <TrustBanner variant="pills" delay={0.4} />
+                {/* Stats bar - Booksy style */}
+                <motion.div initial={{ y: 12, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.3 }}
+                  className="mt-5 flex items-center gap-4">
+                  <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-0.5 bg-foreground text-background px-2.5 py-1 rounded-full">
+                      <Star size={11} fill="currentColor" />
+                      <span className="text-[11px] font-bold">4.9</span>
+                    </div>
+                    <span className="text-xs text-muted-foreground">200+ reviews</span>
+                  </div>
+                  <div className="w-px h-4 bg-border" />
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <Users size={13} />
+                    <span>1,200+ bookings</span>
+                  </div>
+                </motion.div>
+
+                <motion.div initial={{ y: 12, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.4 }}
+                  className="mt-4">
+                  <TrustBanner variant="pills" delay={0.45} />
                 </motion.div>
 
                 <motion.div initial={{ y: 16, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.5 }}
-                  className="mt-auto pt-8 pb-8 space-y-3">
-                  <motion.button whileHover={{ scale: 1.02, y: -2 }} whileTap={{ scale: 0.97 }} onClick={next}
-                    className="w-full bg-foreground text-background font-bold text-[16px] py-[1.125rem] rounded-2xl flex items-center justify-center gap-2.5 hover:shadow-xl transition-all">
+                  className="mt-auto pt-6 pb-8 space-y-3">
+                  <motion.button whileTap={{ scale: 0.97 }} onClick={next}
+                    className="w-full bg-foreground text-background font-bold text-[15px] py-4 rounded-2xl flex items-center justify-center gap-2 active:bg-primary-hover transition-colors">
                     Book Now
-                    <ChevronRight size={18} />
+                    <ChevronRight size={17} />
                   </motion.button>
-                  <p className="text-center text-[12px] text-muted-foreground">
-                    Trusted by 200+ customers · Free cancellation
+                  <p className="text-center text-[11px] text-muted-foreground">
+                    Free cancellation · No payment required yet
                   </p>
                 </motion.div>
               </div>
@@ -259,228 +269,289 @@ const BookingApp = () => {
 
           {/* ══════ STEP 1: Service ══════ */}
           {step === 1 && (
-            <motion.div key="service" custom={dir} variants={slideVariants} initial="enter" animate="center" exit="exit" transition={spring}>
-              <StepWrapper step={1} totalSteps={TOTAL_STEPS} title="Choose your service" subtitle="Select the perfect wash for your car.">
-                <div className="space-y-4 pb-36">
-                  {SERVICES.map((s, i) => (
-                    <motion.div key={s.id} initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.12 + i * 0.1, type: "spring", stiffness: 260, damping: 22 }}>
-                      <ServiceCard {...s} selected={booking.service === s.id}
-                        onClick={(id) => setBooking({ ...booking, service: id })} />
-                    </motion.div>
-                  ))}
+            <motion.div key="service" custom={dir} variants={slideVariants} initial="enter" animate="center" exit="exit" transition={transition}
+              className="flex-1 px-5 pt-6 pb-36">
+              <header className="mb-6">
+                <h1 className="text-xl font-extrabold tracking-tight text-foreground">Choose a service</h1>
+                <p className="text-sm text-muted-foreground mt-1">Select what your car needs</p>
+              </header>
 
-                  {/* Express upsell */}
-                  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}>
-                    <motion.button whileHover={{ y: -3 }} whileTap={{ scale: 0.98 }}
-                      onClick={() => setBooking({ ...booking, express: !booking.express })}
-                      className={`w-full rounded-2xl p-5 flex items-center gap-4 text-left transition-all duration-300
-                        ${booking.express ? "ring-2 ring-premium bg-premium-muted" : "ring-1 ring-border bg-card"}`}
-                      style={{ boxShadow: booking.express ? "0 6px 24px -4px hsl(var(--premium) / 0.2)" : "var(--shadow-card)" }}>
-                      <motion.div animate={booking.express ? { rotate: [0, -12, 12, 0] } : {}} transition={{ duration: 0.4 }}
-                        className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 transition-all duration-300
-                          ${booking.express ? "bg-premium text-premium-foreground" : "bg-muted text-muted-foreground"}`}>
-                        <Zap size={22} fill={booking.express ? "currentColor" : "none"} />
-                      </motion.div>
-                      <div className="flex-1">
-                        <span className="font-bold text-[15px] text-foreground block">Express — 1 hour</span>
-                        <span className="text-muted-foreground text-[12px] mt-0.5 block">Priority service, arrive within the hour</span>
-                      </div>
-                      <span className="font-extrabold tabular-nums text-premium text-lg shrink-0">+£7</span>
-                    </motion.button>
+              <div className="space-y-3">
+                {SERVICES.map((s, i) => (
+                  <motion.div key={s.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.08 + i * 0.08, ...transition }}>
+                    <ServiceCard {...s} selected={booking.service === s.id}
+                      onClick={(id) => setBooking({ ...booking, service: id })} />
                   </motion.div>
-                </div>
-              </StepWrapper>
+                ))}
+              </div>
+
+              {/* Express upsell */}
+              <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
+                className="mt-4">
+                <motion.button whileTap={{ scale: 0.98 }}
+                  onClick={() => setBooking({ ...booking, express: !booking.express })}
+                  className={cn(
+                    "w-full rounded-2xl p-4 flex items-center gap-3.5 text-left transition-all duration-200",
+                    booking.express ? "ring-2 ring-premium bg-premium-muted" : "ring-1 ring-border bg-card"
+                  )}>
+                  <div className={cn(
+                    "w-11 h-11 rounded-xl flex items-center justify-center shrink-0 transition-colors",
+                    booking.express ? "bg-premium text-premium-foreground" : "bg-muted text-muted-foreground"
+                  )}>
+                    <Zap size={20} fill={booking.express ? "currentColor" : "none"} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <span className="font-bold text-sm text-foreground block">Express — 1 hour</span>
+                    <span className="text-muted-foreground text-xs block">Priority arrival within the hour</span>
+                  </div>
+                  <span className="font-extrabold tabular-nums text-premium shrink-0">+£7</span>
+                </motion.button>
+              </motion.div>
             </motion.div>
           )}
 
           {/* ══════ STEP 2: Date & Time ══════ */}
           {step === 2 && (
-            <motion.div key="schedule" custom={dir} variants={slideVariants} initial="enter" animate="center" exit="exit" transition={spring}>
-              <StepWrapper step={2} totalSteps={TOTAL_STEPS} title="Pick a date & time" subtitle="Choose when works best for you.">
-                <div className="space-y-7 pb-36">
-                  <div className="space-y-3">
-                    <label className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-1.5">
-                      <CalendarIcon size={12} /> Date
-                    </label>
-                    <Popover>
-                      <PopoverTrigger asChild>
-                        <motion.button whileHover={{ y: -2 }} whileTap={{ scale: 0.98 }}
-                          className={cn(
-                            "w-full rounded-2xl p-5 text-left font-medium text-[16px] transition-all duration-200 ring-1 ring-border bg-card",
-                            !booking.date && "text-muted-foreground"
-                          )} style={{ boxShadow: "var(--shadow-card)" }}>
-                          <div className="flex items-center gap-3">
-                            <div className="w-11 h-11 rounded-xl bg-muted flex items-center justify-center">
-                              <CalendarIcon size={18} className="text-foreground" />
-                            </div>
-                            <span>{booking.date ? format(booking.date, "EEEE, d MMMM yyyy") : "Choose a date"}</span>
-                          </div>
-                        </motion.button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-0" align="center">
-                        <Calendar mode="single" selected={booking.date}
-                          onSelect={(d) => setBooking({ ...booking, date: d })}
-                          disabled={(d) => d < new Date()}
-                          className={cn("p-3 pointer-events-auto")} />
-                      </PopoverContent>
-                    </Popover>
-                  </div>
+            <motion.div key="schedule" custom={dir} variants={slideVariants} initial="enter" animate="center" exit="exit" transition={transition}
+              className="flex-1 px-5 pt-6 pb-36">
+              <header className="mb-6">
+                <h1 className="text-xl font-extrabold tracking-tight text-foreground">Pick date & time</h1>
+                <p className="text-sm text-muted-foreground mt-1">Choose when works for you</p>
+              </header>
 
-                  <div className="space-y-3">
-                    <label className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-1.5">
-                      <Clock size={12} /> Time Window
-                    </label>
-                    <div className="space-y-3">
-                      {WINDOWS.map((w, i) => (
-                        <motion.div key={w.id} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: 0.15 + i * 0.08, type: "spring", stiffness: 280, damping: 22 }}>
-                          <TimeWindowCard {...w} selected={booking.window === w.id}
-                            onClick={(id) => setBooking({ ...booking, window: id })} />
-                        </motion.div>
-                      ))}
-                    </div>
-                  </div>
+              {/* Horizontal scrolling date chips */}
+              <div className="mb-6">
+                <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3 flex items-center gap-1.5">
+                  <CalendarIcon size={12} /> Date
+                </p>
+                <div className="flex gap-2 overflow-x-auto pb-2 -mx-5 px-5 scrollbar-hide">
+                  {dateOptions.map((d, i) => {
+                    const isSelected = booking.date && isSameDay(booking.date, d);
+                    const isToday = i === 0;
+                    return (
+                      <motion.button
+                        key={d.toISOString()}
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: 0.05 + i * 0.03 }}
+                        whileTap={{ scale: 0.95 }}
+                        onClick={() => setBooking({ ...booking, date: d })}
+                        className={cn(
+                          "flex flex-col items-center min-w-[60px] py-3 px-2 rounded-2xl transition-all duration-200 shrink-0",
+                          isSelected
+                            ? "bg-foreground text-background ring-2 ring-foreground"
+                            : "bg-card ring-1 ring-border hover:ring-foreground/20"
+                        )}
+                      >
+                        <span className={cn(
+                          "text-[10px] font-bold uppercase",
+                          isSelected ? "text-background/70" : "text-muted-foreground"
+                        )}>
+                          {isToday ? "TMR" : format(d, "EEE")}
+                        </span>
+                        <span className={cn(
+                          "text-lg font-extrabold tabular-nums leading-tight mt-0.5",
+                          isSelected ? "text-background" : "text-foreground"
+                        )}>
+                          {format(d, "d")}
+                        </span>
+                        <span className={cn(
+                          "text-[10px] font-medium",
+                          isSelected ? "text-background/70" : "text-muted-foreground"
+                        )}>
+                          {format(d, "MMM")}
+                        </span>
+                      </motion.button>
+                    );
+                  })}
                 </div>
-              </StepWrapper>
+              </div>
+
+              {/* Time slots */}
+              <div>
+                <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3 flex items-center gap-1.5">
+                  <Clock size={12} /> Time
+                </p>
+                <div className="space-y-2.5">
+                  {WINDOWS.map((w, i) => {
+                    const isSelected = booking.window === w.id;
+                    return (
+                      <motion.button
+                        key={w.id}
+                        initial={{ opacity: 0, y: 12 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.15 + i * 0.06 }}
+                        whileTap={{ scale: 0.98 }}
+                        onClick={() => setBooking({ ...booking, window: w.id })}
+                        className={cn(
+                          "w-full rounded-2xl p-4 flex items-center justify-between transition-all duration-200",
+                          isSelected
+                            ? "bg-foreground text-background ring-2 ring-foreground"
+                            : "bg-card ring-1 ring-border"
+                        )}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className={cn(
+                            "w-10 h-10 rounded-xl flex items-center justify-center",
+                            isSelected ? "bg-background/15" : "bg-muted"
+                          )}>
+                            <Clock size={16} className={isSelected ? "text-background" : "text-muted-foreground"} />
+                          </div>
+                          <div className="text-left">
+                            <span className={cn("font-bold text-sm block", isSelected ? "text-background" : "text-foreground")}>
+                              {w.label}
+                            </span>
+                            <span className={cn("text-xs", isSelected ? "text-background/70" : "text-muted-foreground")}>
+                              {w.time}
+                            </span>
+                          </div>
+                        </div>
+                        <span className={cn(
+                          "text-xs font-semibold px-2.5 py-1 rounded-full",
+                          isSelected ? "bg-background/15 text-background" : "bg-success/10 text-success"
+                        )}>
+                          {w.slots} slots
+                        </span>
+                      </motion.button>
+                    );
+                  })}
+                </div>
+              </div>
             </motion.div>
           )}
 
           {/* ══════ STEP 3: Location ══════ */}
           {step === 3 && (
-            <motion.div key="location" custom={dir} variants={slideVariants} initial="enter" animate="center" exit="exit" transition={spring}>
-              <StepWrapper step={3} totalSteps={TOTAL_STEPS} title="Where's your car?" subtitle="We'll come right to you.">
-                <div className="space-y-5 pb-36">
-                  {/* Map visual */}
-                  <motion.div initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.1 }}
-                    className="rounded-3xl overflow-hidden bg-muted relative h-[140px] flex items-center justify-center"
-                    style={{ boxShadow: "var(--shadow-card)" }}>
-                    <div className="absolute inset-0 opacity-[0.06]"
-                      style={{ backgroundImage: `radial-gradient(circle, hsl(var(--foreground)) 1px, transparent 1px)`, backgroundSize: "24px 24px" }} />
-                    {/* Simulated street lines */}
-                    <div className="absolute inset-0 opacity-[0.04]">
-                      <div className="absolute top-1/2 left-0 right-0 h-px bg-foreground" />
-                      <div className="absolute top-0 bottom-0 left-1/2 w-px bg-foreground" />
-                    </div>
-                    <motion.div animate={{ y: [0, -8, 0] }} transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
-                      className="flex flex-col items-center gap-1 relative z-10">
-                      <div className="w-11 h-11 rounded-full bg-foreground text-background flex items-center justify-center shadow-lg">
-                        <Navigation size={18} />
-                      </div>
-                      <div className="w-2.5 h-2.5 rounded-full bg-foreground/20" />
-                    </motion.div>
-                  </motion.div>
+            <motion.div key="location" custom={dir} variants={slideVariants} initial="enter" animate="center" exit="exit" transition={transition}
+              className="flex-1 px-5 pt-6 pb-36">
+              <header className="mb-6">
+                <h1 className="text-xl font-extrabold tracking-tight text-foreground">Where's your car?</h1>
+                <p className="text-sm text-muted-foreground mt-1">We'll come right to you</p>
+              </header>
 
-                  {/* Use current location */}
-                  <motion.button initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
-                    whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}
-                    className="w-full flex items-center gap-3 px-5 py-3.5 rounded-2xl bg-accent text-foreground font-semibold text-[14px] transition-colors hover:bg-accent/80">
-                    <LocateFixed size={18} className="text-foreground" />
-                    Use current location
-                  </motion.button>
-
-                  {/* Postcode */}
-                  <InputField icon={MapPin} label="Postcode" placeholder="e.g. SW1A 1AA" value={booking.postcode}
-                    onChange={(v) => setBooking({ ...booking, postcode: v.toUpperCase() })} delay={0.2} />
-
-                  {/* Address */}
-                  <InputField icon={MapPinned} label="Address" placeholder="House number & street name" value={booking.address}
-                    onChange={(v) => setBooking({ ...booking, address: v })} delay={0.25} />
-
-                  {/* Name & Phone */}
-                  <div className="grid grid-cols-2 gap-3">
-                    <InputField icon={User} label="Name" placeholder="Full name" value={booking.name}
-                      onChange={(v) => setBooking({ ...booking, name: v })} delay={0.3} />
-                    <InputField icon={Phone} label="Phone" placeholder="07XXX" type="tel" value={booking.phone}
-                      onChange={(v) => setBooking({ ...booking, phone: v })} delay={0.34} />
+              {/* Map visual */}
+              <motion.div initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }}
+                className="rounded-2xl overflow-hidden bg-muted relative h-[120px] flex items-center justify-center mb-4"
+                style={{ boxShadow: "var(--shadow-card)" }}>
+                <div className="absolute inset-0 opacity-[0.05]"
+                  style={{ backgroundImage: `radial-gradient(circle, hsl(var(--foreground)) 1px, transparent 1px)`, backgroundSize: "20px 20px" }} />
+                <motion.div animate={{ y: [0, -6, 0] }} transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+                  className="flex flex-col items-center gap-1 relative z-10">
+                  <div className="w-10 h-10 rounded-full bg-foreground text-background flex items-center justify-center shadow-lg">
+                    <Navigation size={16} />
                   </div>
+                  <div className="w-2 h-2 rounded-full bg-foreground/20" />
+                </motion.div>
+              </motion.div>
+
+              {/* Use current location */}
+              <motion.button initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
+                whileTap={{ scale: 0.98 }}
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-accent text-foreground font-semibold text-sm transition-colors hover:bg-accent/80 mb-5">
+                <LocateFixed size={16} />
+                Use current location
+              </motion.button>
+
+              <div className="space-y-4">
+                <InputField icon={MapPin} label="Postcode" placeholder="e.g. SW1A 1AA" value={booking.postcode}
+                  onChange={(v) => setBooking({ ...booking, postcode: v.toUpperCase() })} delay={0.15} />
+                <InputField icon={MapPinned} label="Address" placeholder="House number & street" value={booking.address}
+                  onChange={(v) => setBooking({ ...booking, address: v })} delay={0.2} />
+                <div className="grid grid-cols-2 gap-3">
+                  <InputField icon={User} label="Name" placeholder="Full name" value={booking.name}
+                    onChange={(v) => setBooking({ ...booking, name: v })} delay={0.25} />
+                  <InputField icon={Phone} label="Phone" placeholder="07XXX" type="tel" value={booking.phone}
+                    onChange={(v) => setBooking({ ...booking, phone: v })} delay={0.28} />
                 </div>
-              </StepWrapper>
+              </div>
             </motion.div>
           )}
 
           {/* ══════ STEP 4: Review ══════ */}
           {step === 4 && (
-            <motion.div key="review" custom={dir} variants={slideVariants} initial="enter" animate="center" exit="exit" transition={spring}>
-              <StepWrapper step={4} totalSteps={TOTAL_STEPS} title="Confirm your booking" subtitle="Review the details below.">
-                <div className="space-y-5 pb-36">
-                  <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.12, type: "spring", stiffness: 250, damping: 22 }}
-                    className="bg-card rounded-3xl overflow-hidden" style={{ boxShadow: "var(--shadow-float)" }}>
+            <motion.div key="review" custom={dir} variants={slideVariants} initial="enter" animate="center" exit="exit" transition={transition}
+              className="flex-1 px-5 pt-6 pb-36">
+              <header className="mb-6">
+                <h1 className="text-xl font-extrabold tracking-tight text-foreground">Review booking</h1>
+                <p className="text-sm text-muted-foreground mt-1">Everything look good?</p>
+              </header>
 
-                    {/* Service header */}
-                    <div className="p-6 pb-5 flex items-center gap-4 border-b border-border">
-                      <div className="w-14 h-14 rounded-2xl bg-foreground text-background flex items-center justify-center">
-                        <Sparkles size={24} />
+              <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+                className="rounded-2xl border border-border overflow-hidden">
+
+                {/* Service header */}
+                <div className="p-5 flex items-center gap-3.5 bg-card">
+                  <div className="w-12 h-12 rounded-xl bg-foreground text-background flex items-center justify-center">
+                    <Sparkles size={20} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-[15px] text-foreground">{svc?.title}</p>
+                    <p className="text-muted-foreground text-xs mt-0.5">{svc?.description}</p>
+                  </div>
+                  <span className="text-lg font-extrabold tabular-nums text-foreground">£{svc?.price}</span>
+                </div>
+
+                <div className="h-px bg-border" />
+
+                {/* Detail rows */}
+                <div className="p-5 space-y-3.5 bg-card">
+                  {[
+                    { icon: CalendarIcon, label: "Date", value: booking.date ? format(booking.date, "EEE, d MMM yyyy") : "" },
+                    { icon: Clock, label: "Time", value: WINDOWS.find((w) => w.id === booking.window)?.time },
+                    { icon: MapPin, label: "Location", value: `${booking.address}, ${booking.postcode}` },
+                    { icon: User, label: "Contact", value: `${booking.name} · ${booking.phone}` },
+                  ].map(({ icon: Ic, label, value }, i) => (
+                    <motion.div key={label} initial={{ x: -8, opacity: 0 }} animate={{ x: 0, opacity: 1 }}
+                      transition={{ delay: 0.2 + i * 0.05 }} className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                        <Ic size={14} className="text-muted-foreground" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{label}</p>
+                        <p className="text-sm font-medium text-foreground truncate">{value}</p>
+                      </div>
+                    </motion.div>
+                  ))}
+                  {booking.express && (
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg bg-premium-muted flex items-center justify-center shrink-0">
+                        <Zap size={14} className="text-premium" />
                       </div>
                       <div className="flex-1">
-                        <p className="font-bold text-[17px] text-foreground">{svc?.title}</p>
-                        <p className="text-muted-foreground text-[13px] mt-0.5">{svc?.description}</p>
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Express</p>
+                        <p className="text-sm font-medium text-premium">Within 1 hour (+£7)</p>
                       </div>
-                      <span className="text-xl font-extrabold tabular-nums text-foreground">£{svc?.price}</span>
                     </div>
-
-                    {/* Detail rows */}
-                    <div className="p-6 space-y-4">
-                      {[
-                        { icon: CalendarIcon, label: "Date", value: booking.date ? format(booking.date, "EEE, d MMM yyyy") : "" },
-                        { icon: Clock, label: "Time", value: WINDOWS.find((w) => w.id === booking.window)?.time },
-                        { icon: MapPin, label: "Location", value: `${booking.address}, ${booking.postcode}` },
-                        { icon: User, label: "Contact", value: `${booking.name} · ${booking.phone}` },
-                      ].map(({ icon: Ic, label, value }, i) => (
-                        <motion.div key={label} initial={{ x: -10, opacity: 0 }} animate={{ x: 0, opacity: 1 }}
-                          transition={{ delay: 0.25 + i * 0.06 }} className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-lg bg-muted flex items-center justify-center shrink-0">
-                            <Ic size={15} className="text-muted-foreground" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{label}</p>
-                            <p className="text-[14px] font-medium text-foreground truncate mt-0.5">{value}</p>
-                          </div>
-                        </motion.div>
-                      ))}
-                      {booking.express && (
-                        <motion.div initial={{ x: -10, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ delay: 0.5 }}
-                          className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-lg bg-premium-muted flex items-center justify-center shrink-0">
-                            <Zap size={15} className="text-premium" />
-                          </div>
-                          <div className="flex-1">
-                            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Express</p>
-                            <p className="text-[14px] font-medium text-premium mt-0.5">Within 1 hour (+£7)</p>
-                          </div>
-                        </motion.div>
-                      )}
-                    </div>
-
-                    {/* Total */}
-                    <div className="border-t border-border mx-6" />
-                    <div className="p-6 flex justify-between items-center">
-                      <span className="font-bold text-foreground">Total</span>
-                      <motion.span key={total} initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-                        className="text-[1.75rem] font-extrabold tabular-nums text-foreground">
-                        £{total}
-                      </motion.span>
-                    </div>
-                  </motion.div>
-
-                  {/* Trust line */}
-                  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}
-                    className="flex items-center gap-2 justify-center text-[12px] text-muted-foreground">
-                    <Shield size={13} className="text-success" />
-                    <span>Secure booking · Fully insured · Cancel anytime</span>
-                  </motion.div>
-
-                  {/* Edit */}
-                  <motion.button initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.55 }}
-                    whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}
-                    onClick={() => go(1)}
-                    className="w-full py-3.5 rounded-2xl text-[14px] font-semibold text-foreground bg-muted hover:bg-muted/80 transition-colors flex items-center justify-center gap-2">
-                    <Edit3 size={14} />
-                    Edit booking details
-                  </motion.button>
+                  )}
                 </div>
-              </StepWrapper>
+
+                {/* Total */}
+                <div className="bg-muted/50 px-5 py-4 flex justify-between items-center">
+                  <span className="font-bold text-foreground text-sm">Total</span>
+                  <motion.span key={total} initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
+                    className="text-2xl font-extrabold tabular-nums text-foreground">
+                    £{total}
+                  </motion.span>
+                </div>
+              </motion.div>
+
+              {/* Trust */}
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}
+                className="flex items-center gap-2 justify-center text-xs text-muted-foreground mt-5">
+                <Shield size={13} className="text-success" />
+                <span>Secure booking · Fully insured · Cancel anytime</span>
+              </motion.div>
+
+              {/* Edit */}
+              <motion.button initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.45 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => go(1)}
+                className="w-full mt-4 py-3 rounded-xl text-sm font-semibold text-foreground bg-muted hover:bg-muted/80 transition-colors flex items-center justify-center gap-2">
+                <Edit3 size={13} />
+                Edit details
+              </motion.button>
             </motion.div>
           )}
         </AnimatePresence>
@@ -492,31 +563,23 @@ const BookingApp = () => {
           <motion.div initial={{ y: 100 }} animate={{ y: 0 }} exit={{ y: 100 }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
             className="fixed bottom-0 inset-x-0 z-40 bg-background/95 backdrop-blur-xl border-t border-border">
-            <div className="max-w-lg mx-auto px-6 py-4 flex items-center gap-4">
+            <div className="max-w-lg mx-auto px-5 py-3.5 flex items-center gap-4">
               <div className="flex-1">
-                <span className="text-[10px] uppercase font-bold tracking-[0.2em] text-muted-foreground block">Total</span>
-                <motion.span key={total} initial={{ y: -6, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
-                  transition={{ type: "spring", stiffness: 400 }}
-                  className="text-[1.4rem] font-extrabold tabular-nums text-foreground block leading-tight">
+                <span className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground block">Total</span>
+                <motion.span key={total} initial={{ y: -4, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
+                  className="text-xl font-extrabold tabular-nums text-foreground block leading-tight">
                   £{total}
                 </motion.span>
               </div>
               <motion.button
-                whileHover={canContinue() ? { scale: 1.02, y: -1 } : {}}
                 whileTap={canContinue() ? { scale: 0.97 } : {}}
                 disabled={!canContinue() || submitting}
                 onClick={step === 4 ? confirm : next}
-                className="flex-[2] bg-foreground text-background font-bold text-[15px] rounded-2xl flex items-center justify-center gap-2 transition-all duration-200 disabled:opacity-30 hover:shadow-lg disabled:shadow-none"
-                style={{ paddingTop: "1.1rem", paddingBottom: "1.1rem" }}>
+                className="flex-[2] bg-foreground text-background font-bold text-[15px] py-4 rounded-2xl flex items-center justify-center gap-2 transition-all disabled:opacity-30 active:bg-primary-hover">
                 {step === 4 ? (
-                  <>Confirm Booking <CheckCircle2 size={17} /></>
+                  <>Confirm Booking <CheckCircle2 size={16} /></>
                 ) : (
-                  <>
-                    Continue
-                    <motion.div animate={{ x: [0, 4, 0] }} transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}>
-                      <ChevronRight size={17} />
-                    </motion.div>
-                  </>
+                  <>Continue <ChevronRight size={16} /></>
                 )}
               </motion.button>
             </div>
@@ -539,15 +602,14 @@ interface InputFieldProps {
 }
 
 const InputField = ({ icon: Icon, label, placeholder, value, onChange, delay = 0, type = "text" }: InputFieldProps) => (
-  <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay }} className="space-y-2">
-    <label className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground flex items-center gap-1.5">
-      <Icon size={12} /> {label}
+  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay }} className="space-y-1.5">
+    <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
+      <Icon size={11} /> {label}
     </label>
     <input
       type={type}
       placeholder={placeholder}
-      className="w-full bg-card rounded-2xl px-5 text-[15px] font-medium placeholder:text-muted-foreground/60 focus:outline-none transition-all duration-200 focus:ring-2 focus:ring-foreground/10 ring-1 ring-border"
-      style={{ boxShadow: "var(--shadow-card)", paddingTop: "1rem", paddingBottom: "1rem" }}
+      className="w-full bg-card rounded-xl px-4 py-3.5 text-sm font-medium placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-foreground/10 ring-1 ring-border transition-all"
       value={value}
       onChange={(e) => onChange(e.target.value)}
     />
