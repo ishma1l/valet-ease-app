@@ -17,14 +17,14 @@ const StepWrapper = forwardRef<HTMLDivElement, StepWrapperProps>(
       animate={{ x: 0, opacity: 1 }}
       exit={{ x: -60, opacity: 0 }}
       transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
-      className="flex flex-col w-full pt-6 px-6"
+      className="flex flex-col w-full pt-8 px-6"
     >
       {step !== undefined && totalSteps !== undefined && (
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.05 }}
-          className="text-[11px] font-bold uppercase tracking-[0.2em] text-primary mb-3"
+          className="text-[11px] font-bold uppercase tracking-[0.2em] text-muted-foreground mb-2"
         >
           Step {step} of {totalSteps}
         </motion.p>
@@ -43,7 +43,7 @@ const StepWrapper = forwardRef<HTMLDivElement, StepWrapperProps>(
             initial={{ y: 10, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.14, duration: 0.3 }}
-            className="text-muted-foreground text-[15px] mt-2 leading-relaxed"
+            className="text-muted-foreground text-[15px] mt-2.5 leading-relaxed"
           >
             {subtitle}
           </motion.p>
