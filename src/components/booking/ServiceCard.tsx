@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
-import { Check, Droplets, Sparkles, Car } from "lucide-react";
+import { Check, Droplets, Sparkles, Car, Star, Clock } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const SERVICE_ICONS: Record<string, typeof Droplets> = {
   basic: Droplets,
@@ -13,66 +14,71 @@ interface ServiceCardProps {
   description: string;
   price: number;
   tag?: string;
+  duration: string;
+  rating: number;
+  bookings: number;
   selected: boolean;
   onClick: (id: string) => void;
 }
 
-const ServiceCard = ({ id, title, description, price, tag, selected, onClick }: ServiceCardProps) => {
+const ServiceCard = ({ id, title, description, price, tag, duration, rating, bookings, selected, onClick }: ServiceCardProps) => {
   const Icon = SERVICE_ICONS[id] || Droplets;
 
   return (
     <motion.button
       onClick={() => onClick(id)}
-      whileHover={{ y: -4 }}
       whileTap={{ scale: 0.98 }}
-      className={`relative w-full rounded-[20px] text-left transition-all duration-300 overflow-hidden
-        ${selected ? "ring-2 ring-foreground" : "ring-1 ring-border"}`}
-      style={{
-        boxShadow: selected ? "var(--shadow-float)" : "var(--shadow-card)",
-      }}
+      className={cn(
+        "relative w-full rounded-2xl text-left transition-all duration-200 overflow-hidden",
+        selected ? "ring-2 ring-foreground bg-card" : "ring-1 ring-border bg-card"
+      )}
     >
-      <div className="p-6">
-        {tag && (
-          <span className="inline-flex items-center text-[10px] font-bold uppercase tracking-widest bg-foreground text-background px-3 py-1.5 rounded-full mb-4">
-            ★ {tag}
-          </span>
-        )}
-
-        <div className="flex items-start gap-4">
-          <motion.div
-            animate={selected ? { scale: [1, 1.1, 1] } : {}}
-            transition={{ duration: 0.35 }}
-            className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 transition-all duration-300
-              ${selected ? "bg-foreground text-background" : "bg-muted text-muted-foreground"}`}
-          >
-            <Icon size={24} />
-          </motion.div>
-          <div className="flex-1 min-w-0 pt-0.5">
-            <span className="font-bold text-[17px] block text-foreground leading-tight">{title}</span>
-            <span className="text-muted-foreground text-[13px] mt-1.5 block leading-relaxed">{description}</span>
+      <div className="p-4">
+        <div className="flex items-start gap-3.5">
+          <div className={cn(
+            "w-12 h-12 rounded-xl flex items-center justify-center shrink-0 transition-colors duration-200",
+            selected ? "bg-foreground text-background" : "bg-muted text-muted-foreground"
+          )}>
+            <Icon size={22} />
           </div>
-        </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="font-bold text-[15px] text-foreground">{title}</span>
+              {tag && (
+                <span className="text-[9px] font-bold uppercase tracking-wider bg-foreground text-background px-2 py-0.5 rounded-full">
+                  {tag}
+                </span>
+              )}
+            </div>
+            <p className="text-muted-foreground text-xs mt-0.5 leading-relaxed">{description}</p>
 
-        <div className="flex items-center justify-between mt-5 pt-5 border-t border-border">
-          <div>
-            <span className="text-[11px] uppercase font-bold tracking-widest text-muted-foreground block">From</span>
-            <span className="text-[1.75rem] font-extrabold tabular-nums text-foreground leading-none mt-1 block">
+            {/* Meta row - Booksy style */}
+            <div className="flex items-center gap-3 mt-2.5">
+              <span className="flex items-center gap-1 text-[11px] font-semibold text-foreground">
+                <Star size={10} fill="currentColor" className="text-warning" />
+                {rating}
+              </span>
+              <span className="text-[11px] text-muted-foreground">{bookings} bookings</span>
+              <span className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                <Clock size={10} />
+                {duration}
+              </span>
+            </div>
+          </div>
+          <div className="flex flex-col items-end gap-2 shrink-0 pt-0.5">
+            <span className="text-lg font-extrabold tabular-nums text-foreground leading-none">
               £{price}
             </span>
-          </div>
-          <div
-            className={`w-8 h-8 rounded-full flex items-center justify-center transition-all duration-300
-              ${selected ? "bg-foreground text-background" : "border-[2px] border-border"}`}
-          >
-            {selected && (
-              <motion.div
-                initial={{ scale: 0, rotate: -180 }}
-                animate={{ scale: 1, rotate: 0 }}
-                transition={{ type: "spring", stiffness: 500, damping: 18 }}
-              >
-                <Check size={16} strokeWidth={3} />
-              </motion.div>
-            )}
+            <div className={cn(
+              "w-6 h-6 rounded-full flex items-center justify-center transition-all duration-200",
+              selected ? "bg-foreground text-background" : "border-2 border-border"
+            )}>
+              {selected && (
+                <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 500, damping: 20 }}>
+                  <Check size={12} strokeWidth={3} />
+                </motion.div>
+              )}
+            </div>
           </div>
         </div>
       </div>
