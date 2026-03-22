@@ -84,7 +84,7 @@ const BookingApp = () => {
   const canContinue = () => {
     if (step === 0) return true;
     if (step === 1) return !!booking.service;
-    if (step === 2) return !!booking.date && !!booking.window;
+    if (step === 2) return !!booking.date && (!!booking.window || booking.express);
     if (step === 3) return booking.name && booking.phone && booking.address && booking.postcode;
     if (step === 4) return true;
     return true;
@@ -290,7 +290,7 @@ const BookingApp = () => {
               <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
                 className="mt-4">
                 <motion.button whileTap={{ scale: 0.98 }}
-                  onClick={() => setBooking({ ...booking, express: !booking.express })}
+                  onClick={() => setBooking({ ...booking, express: !booking.express, window: !booking.express ? "express" : "" })}
                   className={cn(
                     "w-full rounded-2xl p-4 flex items-center gap-3.5 text-left transition-all duration-200",
                     booking.express ? "ring-2 ring-premium bg-premium-muted" : "ring-1 ring-border bg-card"
@@ -382,13 +382,16 @@ const BookingApp = () => {
                         initial={{ opacity: 0, y: 12 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.15 + i * 0.06 }}
-                        whileTap={{ scale: 0.98 }}
+                        whileTap={booking.express ? undefined : { scale: 0.98 }}
+                        disabled={booking.express}
                         onClick={() => setBooking({ ...booking, window: w.id })}
                         className={cn(
                           "w-full rounded-2xl p-4 flex items-center justify-between transition-all duration-200",
-                          isSelected
-                            ? "bg-foreground text-background ring-2 ring-foreground"
-                            : "bg-card ring-1 ring-border"
+                          booking.express
+                            ? "bg-muted/50 ring-1 ring-border opacity-50 cursor-not-allowed"
+                            : isSelected
+                              ? "bg-foreground text-background ring-2 ring-foreground"
+                              : "bg-card ring-1 ring-border"
                         )}
                       >
                         <div className="flex items-center gap-3">
