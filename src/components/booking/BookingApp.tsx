@@ -84,7 +84,7 @@ const BookingApp = () => {
   const canContinue = () => {
     if (step === 0) return true;
     if (step === 1) return !!booking.service;
-    if (step === 2) return !!booking.date && !!booking.window;
+    if (step === 2) return !!booking.date && (!!booking.window || booking.express);
     if (step === 3) return booking.name && booking.phone && booking.address && booking.postcode;
     if (step === 4) return true;
     return true;
