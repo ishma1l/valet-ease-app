@@ -382,13 +382,16 @@ const BookingApp = () => {
                         initial={{ opacity: 0, y: 12 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.15 + i * 0.06 }}
-                        whileTap={{ scale: 0.98 }}
+                        whileTap={booking.express ? undefined : { scale: 0.98 }}
+                        disabled={booking.express}
                         onClick={() => setBooking({ ...booking, window: w.id })}
                         className={cn(
                           "w-full rounded-2xl p-4 flex items-center justify-between transition-all duration-200",
-                          isSelected
-                            ? "bg-foreground text-background ring-2 ring-foreground"
-                            : "bg-card ring-1 ring-border"
+                          booking.express
+                            ? "bg-muted/50 ring-1 ring-border opacity-50 cursor-not-allowed"
+                            : isSelected
+                              ? "bg-foreground text-background ring-2 ring-foreground"
+                              : "bg-card ring-1 ring-border"
                         )}
                       >
                         <div className="flex items-center gap-3">
