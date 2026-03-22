@@ -290,7 +290,7 @@ const BookingApp = () => {
               <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
                 className="mt-4">
                 <motion.button whileTap={{ scale: 0.98 }}
-                  onClick={() => setBooking({ ...booking, express: !booking.express })}
+                  onClick={() => setBooking({ ...booking, express: !booking.express, window: !booking.express ? "express" : "" })}
                   className={cn(
                     "w-full rounded-2xl p-4 flex items-center gap-3.5 text-left transition-all duration-200",
                     booking.express ? "ring-2 ring-premium bg-premium-muted" : "ring-1 ring-border bg-card"
