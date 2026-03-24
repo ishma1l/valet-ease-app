@@ -18,6 +18,7 @@ export type Database = {
         Row: {
           address: string
           booking_date: string
+          business_id: string | null
           created_at: string
           customer_name: string
           express: boolean
@@ -34,6 +35,7 @@ export type Database = {
         Insert: {
           address: string
           booking_date: string
+          business_id?: string | null
           created_at?: string
           customer_name: string
           express?: boolean
@@ -50,6 +52,7 @@ export type Database = {
         Update: {
           address?: string
           booking_date?: string
+          business_id?: string | null
           created_at?: string
           customer_name?: string
           express?: boolean
@@ -61,6 +64,97 @@ export type Database = {
           status?: Database["public"]["Enums"]["booking_status"]
           time_window?: string
           total_price?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookings_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      business_services: {
+        Row: {
+          active: boolean
+          business_id: string
+          created_at: string
+          description: string | null
+          duration: string | null
+          id: string
+          price: number
+          sort_order: number
+          title: string
+        }
+        Insert: {
+          active?: boolean
+          business_id: string
+          created_at?: string
+          description?: string | null
+          duration?: string | null
+          id?: string
+          price: number
+          sort_order?: number
+          title: string
+        }
+        Update: {
+          active?: boolean
+          business_id?: string
+          created_at?: string
+          description?: string | null
+          duration?: string | null
+          id?: string
+          price?: number
+          sort_order?: number
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_services_business_id_fkey"
+            columns: ["business_id"]
+            isOneToOne: false
+            referencedRelation: "businesses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      businesses: {
+        Row: {
+          created_at: string
+          id: string
+          logo_url: string | null
+          name: string
+          owner_id: string
+          phone: string | null
+          primary_color: string
+          slug: string
+          tagline: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          logo_url?: string | null
+          name: string
+          owner_id: string
+          phone?: string | null
+          primary_color?: string
+          slug: string
+          tagline?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          logo_url?: string | null
+          name?: string
+          owner_id?: string
+          phone?: string | null
+          primary_color?: string
+          slug?: string
+          tagline?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -96,6 +190,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string | null
+          full_name: string | null
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id: string
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+        }
+        Relationships: []
       }
     }
     Views: {
