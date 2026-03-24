@@ -38,10 +38,10 @@ interface BookingState {
 }
 
 /* ─── Plan Data ─── */
-const PLANS: { id: PlanType; label: string; desc: string; discount: number; icon: typeof Repeat; tag?: string; perks: string[] }[] = [
+const PLANS: { id: PlanType; label: string; desc: string; discount: number; icon: typeof Repeat; tag?: string; perks: string[]; yearlyDesc?: string }[] = [
   { id: "once", label: "One-time", desc: "Single booking", discount: 0, icon: Zap, perks: ["Pay as you go", "No commitment"] },
-  { id: "weekly", label: "Weekly", desc: "Every week", discount: 20, icon: Repeat, tag: "Best value", perks: ["20% off every wash", "Priority scheduling", "Free add-on each month"] },
-  { id: "monthly", label: "Monthly", desc: "Once a month", discount: 10, icon: Crown, tag: "Popular", perks: ["10% off every wash", "Flexible rescheduling"] },
+  { id: "weekly", label: "Weekly", desc: "Every week", discount: 20, icon: Repeat, tag: "Best value", perks: ["20% off every wash", "Priority scheduling", "Free add-on each month", "Cancel anytime"], yearlyDesc: "Save up to £780/year" },
+  { id: "monthly", label: "Monthly", desc: "Once a month", discount: 10, icon: Crown, tag: "Popular", perks: ["10% off every wash", "Flexible rescheduling", "Cancel anytime"], yearlyDesc: "Save up to £54/year" },
 ];
 
 /* ─── Data ─── */
@@ -360,12 +360,60 @@ const BookingApp = () => {
                 <img src={carIllustration} alt="Premium car detailing" width={200} height={128} className="object-contain" />
               </motion.div>
 
-              <StepHeader title="Build your package" sub="Choose a base wash, then add extras" />
+              <StepHeader title="Build your package" sub="Choose a plan, then pick your wash" />
+
+              {/* ── Subscription Toggle ── */}
+              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}
+                className="mt-5 mb-2">
+                <div className="flex p-1 bg-muted rounded-2xl gap-1">
+                  <button onClick={() => setBooking((b) => ({ ...b, plan: "once" }))}
+                    className={cn(
+                      "flex-1 py-2.5 rounded-xl text-sm font-bold transition-all",
+                      booking.plan === "once" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
+                    )}>
+                    One-time
+                  </button>
+                  <button onClick={() => setBooking((b) => ({ ...b, plan: booking.plan === "once" ? "weekly" : b.plan }))}
+                    className={cn(
+                      "flex-1 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-1.5",
+                      booking.plan !== "once"
+                        ? "bg-emerald-500 text-white shadow-sm"
+                        : "text-muted-foreground"
+                    )}>
+                    <Repeat size={13} />
+                    Subscribe
+                    <span className={cn(
+                      "text-[8px] font-bold uppercase px-1.5 py-0.5 rounded-full ml-0.5",
+                      booking.plan !== "once" ? "bg-white/20 text-white" : "bg-emerald-500 text-white"
+                    )}>Save 20%</span>
+                  </button>
+                </div>
+              </motion.div>
+
+              {/* ── Subscription Hero Banner ── */}
+              <AnimatePresence>
+                {booking.plan !== "once" && (
+                  <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.3 }} className="overflow-hidden">
+                    <div className="bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-2xl p-4 mb-4 text-white">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+                          <TrendingDown size={18} />
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-extrabold text-sm">{activePlan.yearlyDesc || `Save ${activePlan.discount}%`}</p>
+                          <p className="text-[11px] text-white/80">Cancel anytime · No lock-in · Priority scheduling</p>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
               {/* ── Base packages ── */}
               <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }}
-                className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mt-5 mb-3 flex items-center gap-1.5">
-                <Package size={11} /> Choose your base
+                className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3 flex items-center gap-1.5">
+                <Package size={11} /> Choose your wash
               </motion.p>
 
               <div className="space-y-2.5">
@@ -393,13 +441,20 @@ const BookingApp = () => {
                           </div>
                           <p className="text-muted-foreground text-xs mt-0.5">{s.desc}</p>
                         </div>
-                        <div className="flex flex-col items-end gap-1.5 shrink-0">
-                          <span className="text-lg font-extrabold tabular-nums text-foreground">£{s.price}</span>
+                      <div className="flex flex-col items-end gap-1.5 shrink-0">
+                          {booking.plan !== "once" ? (
+                            <div className="text-right">
+                              <span className="text-xs text-muted-foreground line-through tabular-nums">£{s.price}</span>
+                              <span className="text-lg font-extrabold tabular-nums text-emerald-600 ml-1">£{Math.round(s.price * (1 - activePlan.discount / 100))}</span>
+                            </div>
+                          ) : (
+                            <span className="text-lg font-extrabold tabular-nums text-foreground">£{s.price}</span>
+                          )}
                           <RadioDot selected={selected} />
                         </div>
                       </div>
 
-                      {/* Expanded includes list */}
+                      {/* Expanded includes + upsell */}
                       <AnimatePresence>
                         {selected && (
                           <motion.div
@@ -420,6 +475,15 @@ const BookingApp = () => {
                                   </span>
                                 ))}
                               </div>
+                              {/* Subscription upsell when on one-time */}
+                              {booking.plan === "once" && (
+                                <div className="mt-2.5 px-3 py-2 bg-emerald-50 rounded-xl flex items-center gap-2">
+                                  <Repeat size={12} className="text-emerald-600 shrink-0" />
+                                  <span className="text-[11px] text-emerald-700 font-semibold">
+                                    Subscribe & save £{Math.round(s.price * 0.2)}/wash — £{Math.round(s.price * 0.2 * 52)}/year
+                                  </span>
+                                </div>
+                              )}
                             </div>
                           </motion.div>
                         )}
@@ -429,29 +493,27 @@ const BookingApp = () => {
                 })}
               </div>
 
-              {/* ── Subscription Plans ── */}
+              {/* ── Subscription Frequency (only when subscribed) ── */}
               <AnimatePresence>
-                {booking.service && (
+                {booking.service && booking.plan !== "once" && (
                   <motion.div
                     initial={{ height: 0, opacity: 0 }}
                     animate={{ height: "auto", opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}
                     transition={{ duration: 0.3, ease: "easeOut" }}
-                    className="overflow-hidden mt-6">
+                    className="overflow-hidden mt-5">
                     <div className="flex items-center justify-between mb-3">
                       <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
-                        <Repeat size={11} /> How often?
+                        <Repeat size={11} /> Frequency
                       </p>
-                      {discountPct > 0 && (
-                        <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 500, damping: 25 }}
-                          className="text-[10px] font-bold bg-emerald-500 text-white px-2 py-0.5 rounded-full flex items-center gap-1">
-                          <TrendingDown size={9} /> Save {discountPct}%
-                        </motion.span>
-                      )}
+                      <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 500, damping: 25 }}
+                        className="text-[10px] font-bold bg-emerald-500 text-white px-2 py-0.5 rounded-full flex items-center gap-1">
+                        <TrendingDown size={9} /> Save {discountPct}%
+                      </motion.span>
                     </div>
 
                     <div className="flex gap-2">
-                      {PLANS.map((p, i) => {
+                      {PLANS.filter(p => p.id !== "once").map((p, i) => {
                         const isSelected = booking.plan === p.id;
                         const PIcon = p.icon;
                         const perWashPrice = svc ? Math.round(svc.price * (1 - p.discount / 100)) : 0;
@@ -460,7 +522,7 @@ const BookingApp = () => {
                             transition={{ delay: 0.05 + i * 0.04, ...spring }} whileTap={{ scale: 0.95 }}
                             onClick={() => setBooking((b) => ({ ...b, plan: p.id }))}
                             className={cn(
-                              "flex-1 rounded-2xl p-3 text-center transition-all duration-200 relative active:scale-[0.95]",
+                              "flex-1 rounded-2xl p-4 text-center transition-all duration-200 relative active:scale-[0.95]",
                               isSelected
                                 ? p.id === "weekly"
                                   ? "ring-2 ring-emerald-500 bg-emerald-50 shadow-[0_0_0_3px_rgba(16,185,129,0.1)]"
@@ -474,30 +536,27 @@ const BookingApp = () => {
                               )}>{p.tag}</span>
                             )}
                             <div className={cn(
-                              "w-9 h-9 rounded-xl flex items-center justify-center mx-auto mb-2 transition-colors",
+                              "w-10 h-10 rounded-xl flex items-center justify-center mx-auto mb-2 transition-colors",
                               isSelected
                                 ? p.id === "weekly" ? "bg-emerald-500 text-white" : "bg-foreground text-background"
                                 : "bg-muted text-muted-foreground"
                             )}>
-                              <PIcon size={16} />
+                              <PIcon size={18} />
                             </div>
                             <span className={cn(
                               "font-bold text-sm block",
                               isSelected && p.id === "weekly" ? "text-emerald-700" : "text-foreground"
                             )}>{p.label}</span>
                             <span className="text-[10px] text-muted-foreground block mt-0.5">{p.desc}</span>
-                            {p.discount > 0 && svc && (
-                              <div className="mt-1.5">
+                            {svc && (
+                              <div className="mt-2">
                                 <span className="text-[10px] text-muted-foreground line-through tabular-nums">£{svc.price}</span>
                                 <span className={cn(
-                                  "text-sm font-extrabold tabular-nums ml-1",
+                                  "text-lg font-extrabold tabular-nums ml-1",
                                   isSelected && p.id === "weekly" ? "text-emerald-600" : "text-foreground"
                                 )}>£{perWashPrice}</span>
                                 <span className="text-[9px] text-muted-foreground">/wash</span>
                               </div>
-                            )}
-                            {p.discount === 0 && svc && (
-                              <span className="text-sm font-extrabold tabular-nums text-foreground mt-1.5 block">£{svc.price}</span>
                             )}
                           </motion.button>
                         );
@@ -562,13 +621,25 @@ const BookingApp = () => {
                           <div className="flex-1 min-w-0">
                             <span className="font-bold text-sm text-foreground block leading-tight">{a.title}</span>
                             <span className="text-[11px] text-muted-foreground leading-tight">{a.desc}</span>
+                            {booking.plan === "weekly" && i === 0 && (
+                              <span className="text-[9px] font-bold text-emerald-600 block mt-0.5">FREE with your plan</span>
+                            )}
+                            {booking.plan !== "once" && booking.plan !== "weekly" && (
+                              <span className="text-[9px] font-bold text-emerald-600 block mt-0.5">Would be free on Weekly plan</span>
+                            )}
                           </div>
                         </div>
                         <div className="flex items-center justify-between mt-2.5 pt-2 border-t border-border/50">
-                          <span className={cn(
-                            "font-extrabold text-sm tabular-nums transition-colors",
-                            selected ? "text-foreground" : "text-muted-foreground"
-                          )}>+£{a.price}</span>
+                          {booking.plan === "weekly" && i === 0 ? (
+                            <span className="font-extrabold text-sm tabular-nums text-emerald-600 flex items-center gap-1">
+                              <span className="line-through text-muted-foreground">£{a.price}</span> FREE
+                            </span>
+                          ) : (
+                            <span className={cn(
+                              "font-extrabold text-sm tabular-nums transition-colors",
+                              selected ? "text-foreground" : "text-muted-foreground"
+                            )}>+£{a.price}</span>
+                          )}
                           <div className={cn(
                             "w-5 h-5 rounded-md flex items-center justify-center transition-all",
                             selected ? "bg-foreground text-background" : "border-2 border-border"
@@ -1037,6 +1108,21 @@ const BookingApp = () => {
           <motion.div initial={{ y: 100 }} animate={{ y: 0 }} exit={{ y: 100 }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
             className="fixed bottom-0 inset-x-0 z-40 bg-background/95 backdrop-blur-xl border-t border-border pb-safe">
+
+            {/* Subscription nudge banner */}
+            {step === 0 && booking.service && booking.plan === "once" && (
+              <motion.div initial={{ height: 0 }} animate={{ height: "auto" }} className="overflow-hidden">
+                <button onClick={() => setBooking((b) => ({ ...b, plan: "weekly" }))}
+                  className="w-full px-5 py-2 bg-emerald-50 flex items-center gap-2 text-left">
+                  <Sparkles size={13} className="text-emerald-600 shrink-0" />
+                  <span className="text-[11px] text-emerald-700 font-semibold flex-1">
+                    This wash would be <span className="font-extrabold">£{Math.round((svc?.price || 0) * 0.8)}/wash</span> with a Weekly plan
+                  </span>
+                  <ChevronRight size={14} className="text-emerald-500" />
+                </button>
+              </motion.div>
+            )}
+
             <div className="max-w-lg mx-auto px-5 py-4 flex items-center gap-4">
               <div className="flex-1 min-w-0">
                 {booking.service && total > 0 ? (
@@ -1052,7 +1138,9 @@ const BookingApp = () => {
                       )}
                     </div>
                     <span className="text-[10px] text-muted-foreground block mt-0.5 truncate">
-                      {[svc?.title, booking.plan !== "once" ? activePlan.label : null, carType?.label].filter(Boolean).join(" · ")}
+                      {booking.plan !== "once"
+                        ? `${activePlan.label} subscription · ${svc?.title}${carType ? ` · ${carType.label}` : ""}`
+                        : [svc?.title, carType?.label].filter(Boolean).join(" · ")}
                     </span>
                   </div>
                 ) : (
@@ -1063,9 +1151,16 @@ const BookingApp = () => {
                 whileTap={canContinue() ? { scale: 0.95 } : {}}
                 disabled={!canContinue() || submitting}
                 onClick={step === 5 ? confirm : next}
-                className="flex-[1.5] bg-foreground text-background font-bold text-[15px] h-14 rounded-2xl flex items-center justify-center gap-2 transition-all disabled:opacity-30 active:scale-[0.95]">
+                className={cn(
+                  "flex-[1.5] font-bold text-[15px] h-14 rounded-2xl flex items-center justify-center gap-2 transition-all disabled:opacity-30 active:scale-[0.95]",
+                  booking.plan !== "once" && step === 5
+                    ? "bg-emerald-500 text-white"
+                    : "bg-foreground text-background"
+                )}>
                 {step === 5 ? (
-                  <>Confirm · £{total} <CheckCircle2 size={16} /></>
+                  booking.plan !== "once"
+                    ? <>Subscribe · £{total}/wash <Repeat size={16} /></>
+                    : <>Confirm · £{total} <CheckCircle2 size={16} /></>
                 ) : step === 0 ? (
                   <>Continue with package <ChevronRight size={16} /></>
                 ) : (
