@@ -812,4 +812,22 @@ const InputField = ({ icon: Icon, label, placeholder, value, onChange, delay = 0
   </motion.div>
 );
 
+const SaveToggle = () => {
+  const [on, setOn] = useState(false);
+  return (
+    <button onClick={() => { setOn(!on); if (!on) toast.success("Address will be saved"); }}
+      className={cn(
+        "w-10 h-6 rounded-full transition-colors relative shrink-0",
+        on ? "bg-foreground" : "bg-border"
+      )}>
+      <motion.div
+        className="w-4.5 h-4.5 rounded-full bg-background absolute top-[3px] shadow-sm"
+        animate={{ left: on ? 20 : 3 }}
+        transition={{ type: "spring", stiffness: 500, damping: 30 }}
+        style={{ width: 18, height: 18 }}
+      />
+    </button>
+  );
+};
+
 export default BookingApp;
