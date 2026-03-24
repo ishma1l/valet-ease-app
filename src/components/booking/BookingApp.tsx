@@ -620,12 +620,31 @@ const BookingApp = () => {
                         </AnimatePresence>
                       </div>
 
+                      {discountPct > 0 && (
+                        <div className="flex items-center justify-between mt-1.5">
+                          <span className="text-xs text-muted-foreground flex items-center gap-1">
+                            <TrendingDown size={10} className="text-emerald-500" /> {activePlan.label} ({discountPct}% off)
+                          </span>
+                          <span className="text-xs font-semibold text-emerald-600 tabular-nums">−£{discountAmount}</span>
+                        </div>
+                      )}
+
                       <div className="flex items-center justify-between mt-3 pt-3 border-t border-border/60">
-                        <span className="font-bold text-sm text-foreground">Package total</span>
-                        <motion.span key={total} initial={{ scale: 1.15 }} animate={{ scale: 1 }}
-                          className="font-extrabold text-xl tabular-nums text-foreground">
-                          £{svc ? svc.price + addonsTotal : 0}
-                        </motion.span>
+                        <div>
+                          <span className="font-bold text-sm text-foreground block">Package total</span>
+                          {discountPct > 0 && (
+                            <span className="text-[10px] text-muted-foreground">{activePlan.label} plan · per wash</span>
+                          )}
+                        </div>
+                        <div className="text-right">
+                          {discountPct > 0 && (
+                            <span className="text-xs text-muted-foreground line-through tabular-nums block">£{baseTotal}</span>
+                          )}
+                          <motion.span key={total} initial={{ scale: 1.15 }} animate={{ scale: 1 }}
+                            className={cn("font-extrabold text-xl tabular-nums", discountPct > 0 ? "text-emerald-600" : "text-foreground")}>
+                            £{total}
+                          </motion.span>
+                        </div>
                       </div>
                     </div>
                   </motion.div>
