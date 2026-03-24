@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
@@ -7,6 +7,7 @@ import {
   Loader2, ArrowRight, Copy, ExternalLink, Palette, Type,
   TrendingUp, PoundSterling, Users, Calendar, CheckCircle2,
   User, Phone, MapPin, Clock, Car, Zap, CircleDot, Truck,
+  ImagePlus, X,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -50,6 +51,11 @@ const BusinessDashboard = () => {
   const [brandTagline, setBrandTagline] = useState("");
   const [brandPhone, setBrandPhone] = useState("");
   const [brandSaving, setBrandSaving] = useState(false);
+  const [brandLogoUrl, setBrandLogoUrl] = useState<string | null>(null);
+  const [logoUploading, setLogoUploading] = useState(false);
+  const logoInputRef = useRef<HTMLInputElement>(null);
+
+  const COLOR_PRESETS = ["#1a1b2e", "#0f766e", "#1d4ed8", "#9333ea", "#dc2626", "#ca8a04", "#16a34a", "#0891b2"];
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
@@ -86,6 +92,7 @@ const BusinessDashboard = () => {
     setBrandColor(biz.primary_color);
     setBrandTagline(biz.tagline || "");
     setBrandPhone(biz.phone || "");
+    setBrandLogoUrl(biz.logo_url || null);
 
     const [{ data: bookingsData }, { data: servicesData }] = await Promise.all([
       supabase.from("bookings").select("*").eq("business_id", biz.id).order("created_at", { ascending: false }),
@@ -129,11 +136,36 @@ const BusinessDashboard = () => {
       primary_color: brandColor,
       tagline: brandTagline,
       phone: brandPhone,
+      logo_url: brandLogoUrl,
     }).eq("id", business.id);
     setBrandSaving(false);
     if (error) { toast.error(error.message); return; }
-    setBusiness((b: any) => ({ ...b, name: brandName, primary_color: brandColor, tagline: brandTagline, phone: brandPhone }));
+    setBusiness((b: any) => ({ ...b, name: brandName, primary_color: brandColor, tagline: brandTagline, phone: brandPhone, logo_url: brandLogoUrl }));
     toast.success("Branding saved!");
+  };
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) { toast.error("Please upload an image"); return; }
+    if (file.size > 2 * 1024 * 1024) { toast.error("Max 2MB"); return; }
+
+    setLogoUploading(true);
+    const ext = file.name.split(".").pop();
+    const path = `${business.id}/logo.${ext}`;
+
+    const { error } = await supabase.storage.from("business-logos").upload(path, file, { upsert: true });
+    if (error) { toast.error("Upload failed"); setLogoUploading(false); return; }
+
+    const { data: urlData } = supabase.storage.from("business-logos").getPublicUrl(path);
+    setBrandLogoUrl(urlData.publicUrl + "?t=" + Date.now());
+    setLogoUploading(false);
+    toast.success("Logo uploaded — save branding to apply");
+  };
+
+  const removeLogo = () => {
+    setBrandLogoUrl(null);
+    toast.info("Logo removed — save branding to apply");
   };
 
   const addService = async () => {
@@ -480,6 +512,39 @@ const BusinessDashboard = () => {
 
           {tab === "branding" && (
             <motion.div key="branding" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-4">
+              {/* Logo */}
+              <div className="card-surface p-5 space-y-4">
+                <h3 className="text-sm font-bold flex items-center gap-2"><ImagePlus size={14} className="text-muted-foreground" /> Logo</h3>
+                <div className="flex items-center gap-4">
+                  {brandLogoUrl ? (
+                    <div className="relative group">
+                      <img src={brandLogoUrl} alt="Logo" className="w-20 h-20 rounded-2xl object-cover border border-border" />
+                      <button onClick={removeLogo}
+                        className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <X size={12} />
+                      </button>
+                    </div>
+                  ) : (
+                    <button onClick={() => logoInputRef.current?.click()} disabled={logoUploading}
+                      className="w-20 h-20 rounded-2xl border-2 border-dashed border-border flex flex-col items-center justify-center gap-1 text-muted-foreground hover:border-foreground hover:text-foreground transition-colors">
+                      {logoUploading ? <Loader2 size={18} className="animate-spin" /> : <><ImagePlus size={18} /><span className="text-[9px] font-bold">Upload</span></>}
+                    </button>
+                  )}
+                  <div className="flex-1">
+                    <p className="text-sm font-medium">Business Logo</p>
+                    <p className="text-xs text-muted-foreground">Square image, max 2MB. PNG or JPG.</p>
+                    {brandLogoUrl && (
+                      <button onClick={() => logoInputRef.current?.click()} disabled={logoUploading}
+                        className="text-xs font-bold text-foreground mt-1 hover:underline">
+                        {logoUploading ? "Uploading…" : "Replace"}
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <input ref={logoInputRef} type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
+              </div>
+
+              {/* Business Info */}
               <div className="card-surface p-5 space-y-4">
                 <h3 className="text-sm font-bold flex items-center gap-2"><Type size={14} className="text-muted-foreground" /> Business Info</h3>
                 <div className="space-y-3">
@@ -501,24 +566,36 @@ const BusinessDashboard = () => {
                 </div>
               </div>
 
+              {/* Brand Color */}
               <div className="card-surface p-5 space-y-4">
                 <h3 className="text-sm font-bold flex items-center gap-2"><Palette size={14} className="text-muted-foreground" /> Brand Color</h3>
+                <div className="flex flex-wrap gap-2 mb-3">
+                  {COLOR_PRESETS.map((c) => (
+                    <button key={c} onClick={() => setBrandColor(c)}
+                      className={`w-9 h-9 rounded-xl transition-all ${brandColor === c ? "ring-2 ring-ring ring-offset-2 ring-offset-background scale-110" : "hover:scale-105"}`}
+                      style={{ backgroundColor: c }} />
+                  ))}
+                </div>
                 <div className="flex items-center gap-4">
                   <input type="color" value={brandColor} onChange={(e) => setBrandColor(e.target.value)}
                     className="w-14 h-14 rounded-xl border-2 border-border cursor-pointer" />
                   <div className="flex-1">
                     <input value={brandColor} onChange={(e) => setBrandColor(e.target.value)}
                       className="w-full h-11 px-3 rounded-xl border border-border bg-card text-sm font-mono font-medium focus:ring-2 focus:ring-ring outline-none" />
-                    <p className="text-[10px] text-muted-foreground mt-1">Used as the primary color on your booking page</p>
+                    <p className="text-[10px] text-muted-foreground mt-1">Used on buttons, highlights, and accents</p>
                   </div>
                 </div>
                 {/* Preview */}
                 <div className="rounded-xl border border-border p-4 space-y-3">
                   <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Preview</p>
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm" style={{ backgroundColor: brandColor }}>
-                      {brandName.charAt(0)}
-                    </div>
+                    {brandLogoUrl ? (
+                      <img src={brandLogoUrl} alt="" className="w-10 h-10 rounded-xl object-cover" />
+                    ) : (
+                      <div className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm" style={{ backgroundColor: brandColor }}>
+                        {brandName.charAt(0)}
+                      </div>
+                    )}
                     <span className="font-extrabold">{brandName || "Your Business"}</span>
                   </div>
                   <button className="w-full h-11 rounded-xl text-white font-bold text-sm" style={{ backgroundColor: brandColor }}>
