@@ -360,12 +360,60 @@ const BookingApp = () => {
                 <img src={carIllustration} alt="Premium car detailing" width={200} height={128} className="object-contain" />
               </motion.div>
 
-              <StepHeader title="Build your package" sub="Choose a base wash, then add extras" />
+              <StepHeader title="Build your package" sub="Choose a plan, then pick your wash" />
+
+              {/* ── Subscription Toggle ── */}
+              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08 }}
+                className="mt-5 mb-2">
+                <div className="flex p-1 bg-muted rounded-2xl gap-1">
+                  <button onClick={() => setBooking((b) => ({ ...b, plan: "once" }))}
+                    className={cn(
+                      "flex-1 py-2.5 rounded-xl text-sm font-bold transition-all",
+                      booking.plan === "once" ? "bg-card text-foreground shadow-sm" : "text-muted-foreground"
+                    )}>
+                    One-time
+                  </button>
+                  <button onClick={() => setBooking((b) => ({ ...b, plan: booking.plan === "once" ? "weekly" : b.plan }))}
+                    className={cn(
+                      "flex-1 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-1.5",
+                      booking.plan !== "once"
+                        ? "bg-emerald-500 text-white shadow-sm"
+                        : "text-muted-foreground"
+                    )}>
+                    <Repeat size={13} />
+                    Subscribe
+                    <span className={cn(
+                      "text-[8px] font-bold uppercase px-1.5 py-0.5 rounded-full ml-0.5",
+                      booking.plan !== "once" ? "bg-white/20 text-white" : "bg-emerald-500 text-white"
+                    )}>Save 20%</span>
+                  </button>
+                </div>
+              </motion.div>
+
+              {/* ── Subscription Hero Banner ── */}
+              <AnimatePresence>
+                {booking.plan !== "once" && (
+                  <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.3 }} className="overflow-hidden">
+                    <div className="bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-2xl p-4 mb-4 text-white">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
+                          <TrendingDown size={18} />
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-extrabold text-sm">{activePlan.yearlyDesc || `Save ${activePlan.discount}%`}</p>
+                          <p className="text-[11px] text-white/80">Cancel anytime · No lock-in · Priority scheduling</p>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
               {/* ── Base packages ── */}
               <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }}
-                className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mt-5 mb-3 flex items-center gap-1.5">
-                <Package size={11} /> Choose your base
+                className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3 flex items-center gap-1.5">
+                <Package size={11} /> Choose your wash
               </motion.p>
 
               <div className="space-y-2.5">
