@@ -38,10 +38,10 @@ interface BookingState {
 }
 
 /* ─── Plan Data ─── */
-const PLANS: { id: PlanType; label: string; desc: string; discount: number; icon: typeof Repeat; tag?: string; perks: string[] }[] = [
+const PLANS: { id: PlanType; label: string; desc: string; discount: number; icon: typeof Repeat; tag?: string; perks: string[]; yearlyDesc?: string }[] = [
   { id: "once", label: "One-time", desc: "Single booking", discount: 0, icon: Zap, perks: ["Pay as you go", "No commitment"] },
-  { id: "weekly", label: "Weekly", desc: "Every week", discount: 20, icon: Repeat, tag: "Best value", perks: ["20% off every wash", "Priority scheduling", "Free add-on each month"] },
-  { id: "monthly", label: "Monthly", desc: "Once a month", discount: 10, icon: Crown, tag: "Popular", perks: ["10% off every wash", "Flexible rescheduling"] },
+  { id: "weekly", label: "Weekly", desc: "Every week", discount: 20, icon: Repeat, tag: "Best value", perks: ["20% off every wash", "Priority scheduling", "Free add-on each month", "Cancel anytime"], yearlyDesc: "Save up to £780/year" },
+  { id: "monthly", label: "Monthly", desc: "Once a month", discount: 10, icon: Crown, tag: "Popular", perks: ["10% off every wash", "Flexible rescheduling", "Cancel anytime"], yearlyDesc: "Save up to £54/year" },
 ];
 
 /* ─── Data ─── */
