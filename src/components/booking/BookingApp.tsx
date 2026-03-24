@@ -289,10 +289,8 @@ const BookingApp = () => {
       </div>
     );
   }
-        </motion.button>
-      </div>
-    );
-  }
+
+
 
   /* ═══════════ MAIN ═══════════ */
   return (
