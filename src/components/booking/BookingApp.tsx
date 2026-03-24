@@ -121,10 +121,16 @@ const BookingApp = () => {
 
   const svc = SERVICES.find((s) => s.id === booking.service);
   const carType = CAR_TYPES.find((c) => c.id === booking.carType);
+  const activePlan = PLANS.find((p) => p.id === booking.plan) || PLANS[0];
   const multiplier = carType?.multiplier || 1;
-  const servicePrice = Math.round((svc?.price || 0) * multiplier);
-  const addonsTotal = ADDONS.filter((a) => booking.addons.includes(a.id)).reduce((sum, a) => sum + a.price, 0);
-  const total = servicePrice + addonsTotal;
+  const baseServicePrice = Math.round((svc?.price || 0) * multiplier);
+  const baseAddonsTotal = ADDONS.filter((a) => booking.addons.includes(a.id)).reduce((sum, a) => sum + a.price, 0);
+  const discountPct = activePlan.discount;
+  const baseTotal = baseServicePrice + baseAddonsTotal;
+  const discountAmount = Math.round(baseTotal * discountPct / 100);
+  const servicePrice = baseServicePrice; // for DB
+  const addonsTotal = baseAddonsTotal;
+  const total = baseTotal - discountAmount;
 
   const toggleAddon = (id: string) => {
     setBooking((b) => ({
