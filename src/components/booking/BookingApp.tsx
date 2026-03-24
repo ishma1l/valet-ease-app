@@ -12,6 +12,10 @@ import {
   Wind, Paintbrush, SprayCan, Armchair,
 } from "lucide-react";
 import carIllustration from "@/assets/car-illustration.png";
+import carSmall from "@/assets/car-small.png";
+import carSedan from "@/assets/car-sedan.png";
+import carSuv from "@/assets/car-suv.png";
+import carVan from "@/assets/car-van.png";
 
 /* ─── Types ─── */
 interface BookingState {
