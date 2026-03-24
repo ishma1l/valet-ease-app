@@ -1,21 +1,31 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   MapPin, Clock, Car, Phone, User, Calendar, Zap,
   Inbox, Loader2, RefreshCw, CheckCircle2, Navigation,
-  Play, X, Check, ChevronRight,
+  Play, X, Check, ChevronRight, Camera, ImageIcon,
 } from "lucide-react";
 import { Link } from "react-router-dom";
+import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
+import BeforeAfterComparison, { PhotoUploadButton } from "@/components/photos/BeforeAfterComparison";
 
 type Booking = Database["public"]["Tables"]["bookings"]["Row"];
 type BookingStatus = Database["public"]["Enums"]["booking_status"];
 
 type WorkerJobStatus = "new" | "accepted" | "on_the_way" | "in_progress" | "completed" | "rejected";
 
+interface JobPhoto {
+  id: string;
+  photo_type: "before" | "after";
+  storage_path: string;
+  url: string;
+}
+
 interface WorkerJob extends Booking {
   workerStatus: WorkerJobStatus;
+  photos: JobPhoto[];
 }
 
 const STATUS_FLOW: { key: WorkerJobStatus; label: string; icon: typeof Play; color: string }[] = [
@@ -33,31 +43,51 @@ const WORKER_STATUS_BADGE: Record<WorkerJobStatus, { label: string; classes: str
   rejected: { label: "Rejected", classes: "bg-destructive/10 text-destructive ring-destructive/20" },
 };
 
+const getPhotoUrl = (path: string) => {
+  const { data } = supabase.storage.from("job-photos").getPublicUrl(path);
+  return data.publicUrl;
+};
+
 const WorkerDashboard = () => {
   const [jobs, setJobs] = useState<WorkerJob[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState<"active" | "completed">("active");
+  const [uploading, setUploading] = useState<Record<string, "before" | "after" | null>>({});
+  const [expandedPhotos, setExpandedPhotos] = useState<string | null>(null);
 
-  const fetchJobs = async (isRefresh = false) => {
+  const fetchJobs = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true);
-    const { data } = await supabase
-      .from("bookings")
-      .select("*")
-      .order("created_at", { ascending: false });
 
-    const mapped: WorkerJob[] = (data || []).map((b) => ({
+    const [{ data: bookings }, { data: photos }] = await Promise.all([
+      supabase.from("bookings").select("*").order("created_at", { ascending: false }),
+      supabase.from("job_photos").select("*"),
+    ]);
+
+    const photosByBooking: Record<string, JobPhoto[]> = {};
+    (photos || []).forEach((p: any) => {
+      if (!photosByBooking[p.booking_id]) photosByBooking[p.booking_id] = [];
+      photosByBooking[p.booking_id].push({
+        id: p.id,
+        photo_type: p.photo_type,
+        storage_path: p.storage_path,
+        url: getPhotoUrl(p.storage_path),
+      });
+    });
+
+    const mapped: WorkerJob[] = (bookings || []).map((b) => ({
       ...b,
       workerStatus: b.status === "completed" ? "completed" as WorkerJobStatus
         : b.status === "assigned" ? "accepted" as WorkerJobStatus
         : "new" as WorkerJobStatus,
+      photos: photosByBooking[b.id] || [],
     }));
     setJobs(mapped);
     setLoading(false);
     setRefreshing(false);
-  };
+  }, []);
 
-  useEffect(() => { fetchJobs(); }, []);
+  useEffect(() => { fetchJobs(); }, [fetchJobs]);
 
   const updateJobStatus = async (id: string, newStatus: WorkerJobStatus) => {
     let dbStatus: BookingStatus = "pending";
@@ -66,7 +96,6 @@ const WorkerDashboard = () => {
     } else if (newStatus === "completed") {
       dbStatus = "completed";
     }
-
     await supabase.from("bookings").update({ status: dbStatus }).eq("id", id);
     setJobs((prev) =>
       prev.map((j) => (j.id === id ? { ...j, workerStatus: newStatus, status: dbStatus } : j))
@@ -75,6 +104,46 @@ const WorkerDashboard = () => {
 
   const acceptJob = (id: string) => updateJobStatus(id, "accepted");
   const rejectJob = (id: string) => updateJobStatus(id, "rejected");
+
+  const uploadPhoto = async (jobId: string, type: "before" | "after", file: File) => {
+    setUploading((u) => ({ ...u, [jobId]: type }));
+    const ext = file.name.split(".").pop() || "jpg";
+    const path = `${jobId}/${type}-${Date.now()}.${ext}`;
+
+    const { error: uploadErr } = await supabase.storage.from("job-photos").upload(path, file, { upsert: true });
+    if (uploadErr) {
+      toast.error("Upload failed");
+      setUploading((u) => ({ ...u, [jobId]: null }));
+      return;
+    }
+
+    // Remove existing photo of same type for this job
+    const existing = jobs.find((j) => j.id === jobId)?.photos.find((p) => p.photo_type === type);
+    if (existing) {
+      await supabase.from("job_photos").delete().eq("id", existing.id);
+      await supabase.storage.from("job-photos").remove([existing.storage_path]);
+    }
+
+    const { error: dbErr } = await supabase.from("job_photos").insert({
+      booking_id: jobId,
+      photo_type: type,
+      storage_path: path,
+    });
+
+    if (dbErr) {
+      toast.error("Failed to save photo");
+    } else {
+      toast.success(`${type === "before" ? "Before" : "After"} photo saved`);
+      const newPhoto: JobPhoto = { id: crypto.randomUUID(), photo_type: type, storage_path: path, url: getPhotoUrl(path) };
+      setJobs((prev) =>
+        prev.map((j) => j.id === jobId ? {
+          ...j,
+          photos: [...j.photos.filter((p) => p.photo_type !== type), newPhoto],
+        } : j)
+      );
+    }
+    setUploading((u) => ({ ...u, [jobId]: null }));
+  };
 
   const getNextAction = (status: WorkerJobStatus) => {
     if (status === "accepted") return STATUS_FLOW[0];
@@ -86,7 +155,6 @@ const WorkerDashboard = () => {
   const activeJobs = jobs.filter((j) => !["completed", "rejected"].includes(j.workerStatus));
   const completedJobs = jobs.filter((j) => j.workerStatus === "completed");
   const displayJobs = activeTab === "active" ? activeJobs : completedJobs;
-
   const todayEarnings = completedJobs.reduce((sum, j) => sum + j.total_price, 0);
 
   return (
@@ -164,6 +232,11 @@ const WorkerDashboard = () => {
                 const badge = WORKER_STATUS_BADGE[job.workerStatus];
                 const nextAction = getNextAction(job.workerStatus);
                 const isNew = job.workerStatus === "new";
+                const beforePhoto = job.photos.find((p) => p.photo_type === "before");
+                const afterPhoto = job.photos.find((p) => p.photo_type === "after");
+                const showPhotoSection = ["in_progress", "completed"].includes(job.workerStatus) || job.photos.length > 0;
+                const isPhotosExpanded = expandedPhotos === job.id;
+                const jobUploading = uploading[job.id];
 
                 return (
                   <motion.div
@@ -240,6 +313,85 @@ const WorkerDashboard = () => {
                       <span className="text-xs text-muted-foreground font-medium">Payout</span>
                       <span className="text-lg font-extrabold tabular-nums">£{job.total_price}</span>
                     </div>
+
+                    {/* Photo Section */}
+                    {showPhotoSection && (
+                      <div className="pt-2 border-t border-border space-y-3">
+                        <button
+                          onClick={() => setExpandedPhotos(isPhotosExpanded ? null : job.id)}
+                          className="flex items-center gap-2 w-full text-left"
+                        >
+                          <Camera size={14} className="text-muted-foreground" />
+                          <span className="text-xs font-bold text-foreground flex-1">
+                            Before & After Photos
+                            {job.photos.length > 0 && (
+                              <span className="ml-1.5 text-[10px] font-semibold text-muted-foreground">
+                                ({job.photos.length}/2)
+                              </span>
+                            )}
+                          </span>
+                          <ChevronRight size={14} className={`text-muted-foreground transition-transform ${isPhotosExpanded ? "rotate-90" : ""}`} />
+                        </button>
+
+                        <AnimatePresence>
+                          {isPhotosExpanded && (
+                            <motion.div
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: "auto", opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              transition={{ duration: 0.2 }}
+                              className="overflow-hidden"
+                            >
+                              {/* Comparison view when both photos exist */}
+                              {beforePhoto && afterPhoto ? (
+                                <div className="space-y-3">
+                                  <BeforeAfterComparison
+                                    beforeUrl={beforePhoto.url}
+                                    afterUrl={afterPhoto.url}
+                                  />
+                                  <p className="text-[10px] text-center text-muted-foreground font-medium">
+                                    Drag slider to compare
+                                  </p>
+                                </div>
+                              ) : (
+                                <div className="flex gap-3">
+                                  <PhotoUploadButton
+                                    label="📷 Before"
+                                    photoUrl={beforePhoto?.url}
+                                    uploading={jobUploading === "before"}
+                                    onUpload={(file) => uploadPhoto(job.id, "before", file)}
+                                  />
+                                  <PhotoUploadButton
+                                    label="✨ After"
+                                    photoUrl={afterPhoto?.url}
+                                    uploading={jobUploading === "after"}
+                                    onUpload={(file) => uploadPhoto(job.id, "after", file)}
+                                  />
+                                </div>
+                              )}
+
+                              {/* Retake buttons when both exist */}
+                              {beforePhoto && afterPhoto && (
+                                <div className="flex gap-2 mt-2">
+                                  <button
+                                    onClick={() => { const input = document.createElement("input"); input.type = "file"; input.accept = "image/*"; input.capture = "environment"; input.onchange = (e) => { const f = (e.target as HTMLInputElement).files?.[0]; if (f) uploadPhoto(job.id, "before", f); }; input.click(); }}
+                                    className="flex-1 text-[11px] font-semibold text-muted-foreground py-2 rounded-lg bg-muted hover:bg-secondary transition-colors"
+                                  >
+                                    Retake Before
+                                  </button>
+                                  <button
+                                    onClick={() => { const input = document.createElement("input"); input.type = "file"; input.accept = "image/*"; input.capture = "environment"; input.onchange = (e) => { const f = (e.target as HTMLInputElement).files?.[0]; if (f) uploadPhoto(job.id, "after", f); }; input.click(); }}
+                                    className="flex-1 text-[11px] font-semibold text-muted-foreground py-2 rounded-lg bg-muted hover:bg-secondary transition-colors"
+                                  >
+                                    Retake After
+                                  </button>
+                                </div>
+                              )}
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                      </div>
+                    )}
 
                     {/* Actions */}
                     {isNew && (
