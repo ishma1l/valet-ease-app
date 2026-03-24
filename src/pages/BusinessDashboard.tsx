@@ -7,6 +7,7 @@ import {
   Loader2, ArrowRight, Copy, ExternalLink, Palette, Type,
   TrendingUp, PoundSterling, Users, Calendar, CheckCircle2,
   User, Phone, MapPin, Clock, Car, Zap, CircleDot, Truck,
+  ImagePlus, X,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
