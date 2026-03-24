@@ -6,7 +6,7 @@ import { format, addDays, isSameDay } from "date-fns";
 import { cn } from "@/lib/utils";
 import {
   MapPin, Clock, CheckCircle2, ChevronRight, ArrowLeft,
-  CalendarIcon, User, Phone, Sparkles, Package,
+  CalendarIcon, User, Phone, Sparkles, Package, Repeat, Crown, Zap, TrendingDown,
   Shield, ShieldCheck, Check, Plus,
   Droplets, Car, LocateFixed, Navigation,
   Wind, Paintbrush, SprayCan, Armchair, Home,
@@ -19,10 +19,13 @@ import carSuv from "@/assets/car-suv.png";
 import carVan from "@/assets/car-van.png";
 
 /* ─── Types ─── */
+type PlanType = "once" | "weekly" | "monthly";
+
 interface BookingState {
   service: string | null;
   carType: string | null;
   addons: string[];
+  plan: PlanType;
   date: Date | undefined;
   window: string;
   name: string;
@@ -30,6 +33,13 @@ interface BookingState {
   address: string;
   postcode: string;
 }
+
+/* ─── Plan Data ─── */
+const PLANS: { id: PlanType; label: string; desc: string; discount: number; icon: typeof Repeat; tag?: string; perks: string[] }[] = [
+  { id: "once", label: "One-time", desc: "Single booking", discount: 0, icon: Zap, perks: ["Pay as you go", "No commitment"] },
+  { id: "weekly", label: "Weekly", desc: "Every week", discount: 20, icon: Repeat, tag: "Best value", perks: ["20% off every wash", "Priority scheduling", "Free add-on each month"] },
+  { id: "monthly", label: "Monthly", desc: "Once a month", discount: 10, icon: Crown, tag: "Popular", perks: ["10% off every wash", "Flexible rescheduling"] },
+];
 
 /* ─── Data ─── */
 const SERVICES = [
@@ -77,7 +87,7 @@ const BookingApp = () => {
   const [submitting, setSubmitting] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
   const [booking, setBooking] = useState<BookingState>({
-    service: null, carType: null, addons: [], date: undefined,
+    service: null, carType: null, addons: [], plan: "weekly" as PlanType, date: undefined,
     window: "", name: "", phone: "", address: "", postcode: "",
   });
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -111,10 +121,16 @@ const BookingApp = () => {
 
   const svc = SERVICES.find((s) => s.id === booking.service);
   const carType = CAR_TYPES.find((c) => c.id === booking.carType);
+  const activePlan = PLANS.find((p) => p.id === booking.plan) || PLANS[0];
   const multiplier = carType?.multiplier || 1;
-  const servicePrice = Math.round((svc?.price || 0) * multiplier);
-  const addonsTotal = ADDONS.filter((a) => booking.addons.includes(a.id)).reduce((sum, a) => sum + a.price, 0);
-  const total = servicePrice + addonsTotal;
+  const baseServicePrice = Math.round((svc?.price || 0) * multiplier);
+  const baseAddonsTotal = ADDONS.filter((a) => booking.addons.includes(a.id)).reduce((sum, a) => sum + a.price, 0);
+  const discountPct = activePlan.discount;
+  const baseTotal = baseServicePrice + baseAddonsTotal;
+  const discountAmount = Math.round(baseTotal * discountPct / 100);
+  const servicePrice = baseServicePrice; // for DB
+  const addonsTotal = baseAddonsTotal;
+  const total = baseTotal - discountAmount;
 
   const toggleAddon = (id: string) => {
     setBooking((b) => ({
@@ -154,7 +170,7 @@ const BookingApp = () => {
 
   const reset = () => {
     setDir(1); setStep(0); setConfirmed(false);
-    setBooking({ service: null, carType: null, addons: [], date: undefined, window: "", name: "", phone: "", address: "", postcode: "" });
+    setBooking({ service: null, carType: null, addons: [], plan: "weekly", date: undefined, window: "", name: "", phone: "", address: "", postcode: "" });
   };
 
   const dateOptions = Array.from({ length: 14 }, (_, i) => addDays(new Date(), i + 1));
@@ -402,7 +418,99 @@ const BookingApp = () => {
                 })}
               </div>
 
-              {/* ── Add-ons section ── */}
+              {/* ── Subscription Plans ── */}
+              <AnimatePresence>
+                {booking.service && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.3, ease: "easeOut" }}
+                    className="overflow-hidden mt-6">
+                    <div className="flex items-center justify-between mb-3">
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
+                        <Repeat size={11} /> How often?
+                      </p>
+                      {discountPct > 0 && (
+                        <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 500, damping: 25 }}
+                          className="text-[10px] font-bold bg-emerald-500 text-white px-2 py-0.5 rounded-full flex items-center gap-1">
+                          <TrendingDown size={9} /> Save {discountPct}%
+                        </motion.span>
+                      )}
+                    </div>
+
+                    <div className="flex gap-2">
+                      {PLANS.map((p, i) => {
+                        const isSelected = booking.plan === p.id;
+                        const PIcon = p.icon;
+                        const perWashPrice = svc ? Math.round(svc.price * (1 - p.discount / 100)) : 0;
+                        return (
+                          <motion.button key={p.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.05 + i * 0.04, ...spring }} whileTap={{ scale: 0.95 }}
+                            onClick={() => setBooking((b) => ({ ...b, plan: p.id }))}
+                            className={cn(
+                              "flex-1 rounded-2xl p-3 text-center transition-all duration-200 relative active:scale-[0.95]",
+                              isSelected
+                                ? p.id === "weekly"
+                                  ? "ring-2 ring-emerald-500 bg-emerald-50 shadow-[0_0_0_3px_rgba(16,185,129,0.1)]"
+                                  : "ring-2 ring-foreground bg-card shadow-[var(--shadow-glow)]"
+                                : "ring-1 ring-border bg-card"
+                            )}>
+                            {p.tag && (
+                              <span className={cn(
+                                "absolute -top-2 left-1/2 -translate-x-1/2 text-[7px] font-bold uppercase px-2 py-0.5 rounded-full whitespace-nowrap",
+                                p.id === "weekly" ? "bg-emerald-500 text-white" : "bg-foreground text-background"
+                              )}>{p.tag}</span>
+                            )}
+                            <div className={cn(
+                              "w-9 h-9 rounded-xl flex items-center justify-center mx-auto mb-2 transition-colors",
+                              isSelected
+                                ? p.id === "weekly" ? "bg-emerald-500 text-white" : "bg-foreground text-background"
+                                : "bg-muted text-muted-foreground"
+                            )}>
+                              <PIcon size={16} />
+                            </div>
+                            <span className={cn(
+                              "font-bold text-sm block",
+                              isSelected && p.id === "weekly" ? "text-emerald-700" : "text-foreground"
+                            )}>{p.label}</span>
+                            <span className="text-[10px] text-muted-foreground block mt-0.5">{p.desc}</span>
+                            {p.discount > 0 && svc && (
+                              <div className="mt-1.5">
+                                <span className="text-[10px] text-muted-foreground line-through tabular-nums">£{svc.price}</span>
+                                <span className={cn(
+                                  "text-sm font-extrabold tabular-nums ml-1",
+                                  isSelected && p.id === "weekly" ? "text-emerald-600" : "text-foreground"
+                                )}>£{perWashPrice}</span>
+                                <span className="text-[9px] text-muted-foreground">/wash</span>
+                              </div>
+                            )}
+                            {p.discount === 0 && svc && (
+                              <span className="text-sm font-extrabold tabular-nums text-foreground mt-1.5 block">£{svc.price}</span>
+                            )}
+                          </motion.button>
+                        );
+                      })}
+                    </div>
+
+                    {/* Plan perks */}
+                    <AnimatePresence mode="wait">
+                      <motion.div key={booking.plan} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                        transition={{ duration: 0.2 }} className="mt-3 flex flex-wrap gap-1.5">
+                        {activePlan.perks.map((perk) => (
+                          <span key={perk} className={cn(
+                            "text-[10px] font-medium px-2.5 py-1 rounded-lg flex items-center gap-1",
+                            booking.plan === "weekly" ? "bg-emerald-50 text-emerald-700" : "bg-muted text-muted-foreground"
+                          )}>
+                            <Check size={9} strokeWidth={3} className={booking.plan === "weekly" ? "text-emerald-500" : "text-muted-foreground"} /> {perk}
+                          </span>
+                        ))}
+                      </motion.div>
+                    </AnimatePresence>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
               <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: booking.service ? 1 : 0.4 }}
@@ -512,12 +620,31 @@ const BookingApp = () => {
                         </AnimatePresence>
                       </div>
 
+                      {discountPct > 0 && (
+                        <div className="flex items-center justify-between mt-1.5">
+                          <span className="text-xs text-muted-foreground flex items-center gap-1">
+                            <TrendingDown size={10} className="text-emerald-500" /> {activePlan.label} ({discountPct}% off)
+                          </span>
+                          <span className="text-xs font-semibold text-emerald-600 tabular-nums">−£{discountAmount}</span>
+                        </div>
+                      )}
+
                       <div className="flex items-center justify-between mt-3 pt-3 border-t border-border/60">
-                        <span className="font-bold text-sm text-foreground">Package total</span>
-                        <motion.span key={total} initial={{ scale: 1.15 }} animate={{ scale: 1 }}
-                          className="font-extrabold text-xl tabular-nums text-foreground">
-                          £{svc ? svc.price + addonsTotal : 0}
-                        </motion.span>
+                        <div>
+                          <span className="font-bold text-sm text-foreground block">Package total</span>
+                          {discountPct > 0 && (
+                            <span className="text-[10px] text-muted-foreground">{activePlan.label} plan · per wash</span>
+                          )}
+                        </div>
+                        <div className="text-right">
+                          {discountPct > 0 && (
+                            <span className="text-xs text-muted-foreground line-through tabular-nums block">£{baseTotal}</span>
+                          )}
+                          <motion.span key={total} initial={{ scale: 1.15 }} animate={{ scale: 1 }}
+                            className={cn("font-extrabold text-xl tabular-nums", discountPct > 0 ? "text-emerald-600" : "text-foreground")}>
+                            £{total}
+                          </motion.span>
+                        </div>
                       </div>
                     </div>
                   </motion.div>
@@ -864,9 +991,21 @@ const BookingApp = () => {
                   )}
                 </div>
 
+                {discountPct > 0 && (
+                  <div className="bg-emerald-50 px-4 py-2.5 flex items-center justify-between border-t border-border">
+                    <span className="text-xs text-emerald-700 font-semibold flex items-center gap-1.5">
+                      <Repeat size={11} /> {activePlan.label} plan · {discountPct}% off
+                    </span>
+                    <span className="text-xs font-bold text-emerald-600 tabular-nums">−£{discountAmount}</span>
+                  </div>
+                )}
+
                 <div className="bg-muted/50 px-4 py-4 flex justify-between items-center border-t border-border">
-                  <span className="font-bold text-foreground text-sm">Total</span>
-                  <span className="text-2xl font-extrabold tabular-nums text-foreground">£{total}</span>
+                  <span className="font-bold text-foreground text-sm">Total{booking.plan !== "once" ? " per wash" : ""}</span>
+                  <div className="text-right flex items-baseline gap-2">
+                    {discountPct > 0 && <span className="text-sm text-muted-foreground line-through tabular-nums">£{baseTotal}</span>}
+                    <span className={cn("text-2xl font-extrabold tabular-nums", discountPct > 0 ? "text-emerald-600" : "text-foreground")}>£{total}</span>
+                  </div>
                 </div>
               </motion.div>
 
@@ -892,17 +1031,17 @@ const BookingApp = () => {
                 {booking.service && total > 0 ? (
                   <div>
                     <div className="flex items-baseline gap-1.5">
+                      {discountPct > 0 && (
+                        <span className="text-sm text-muted-foreground line-through tabular-nums">£{baseTotal}</span>
+                      )}
                       <motion.span key={total} initial={{ y: -6, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
-                        className="text-xl font-extrabold tabular-nums text-foreground leading-tight">£{total}</motion.span>
-                      {addonsTotal > 0 && (
-                        <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                          className="text-[10px] text-muted-foreground font-medium">
-                          incl. {selectedAddons.length} extra{selectedAddons.length > 1 ? "s" : ""}
-                        </motion.span>
+                        className={cn("text-xl font-extrabold tabular-nums leading-tight", discountPct > 0 ? "text-emerald-600" : "text-foreground")}>£{total}</motion.span>
+                      {booking.plan !== "once" && (
+                        <span className="text-[10px] text-muted-foreground font-medium">/wash</span>
                       )}
                     </div>
                     <span className="text-[10px] text-muted-foreground block mt-0.5 truncate">
-                      {[svc?.title, carType?.label].filter(Boolean).join(" · ")}
+                      {[svc?.title, booking.plan !== "once" ? activePlan.label : null, carType?.label].filter(Boolean).join(" · ")}
                     </span>
                   </div>
                 ) : (
