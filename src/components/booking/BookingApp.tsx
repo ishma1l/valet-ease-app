@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { AnimatePresence, motion } from "framer-motion";
@@ -63,11 +63,11 @@ const TOTAL_STEPS = 6;
 
 /* ─── Animation ─── */
 const slideVariants = {
-  enter: (dir: number) => ({ x: dir > 0 ? 50 : -50, opacity: 0 }),
-  center: { x: 0, opacity: 1 },
-  exit: (dir: number) => ({ x: dir > 0 ? -50 : 50, opacity: 0 }),
+  enter: (dir: number) => ({ x: dir > 0 ? 60 : -60, opacity: 0, scale: 0.97 }),
+  center: { x: 0, opacity: 1, scale: 1 },
+  exit: (dir: number) => ({ x: dir > 0 ? -60 : 60, opacity: 0, scale: 0.97 }),
 };
-const ease = { duration: 0.32, ease: [0.22, 1, 0.36, 1] as const };
+const springTransition = { type: "spring" as const, stiffness: 300, damping: 30, mass: 0.8 };
 
 /* ═══════════════════════════════════════════════ */
 const BookingApp = () => {
@@ -75,14 +75,42 @@ const BookingApp = () => {
   const [dir, setDir] = useState(1);
   const [submitting, setSubmitting] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
+  const [transitioning, setTransitioning] = useState(false);
   const [booking, setBooking] = useState<BookingState>({
     service: null, carType: null, addons: [], date: undefined,
     window: "", name: "", phone: "", address: "", postcode: "",
   });
+  const scrollRef = useRef<HTMLDivElement>(null);
 
-  const go = useCallback((to: number) => { setDir(to > step ? 1 : -1); setStep(to); }, [step]);
-  const next = useCallback(() => { setDir(1); setStep((s) => s + 1); }, []);
-  const back = useCallback(() => { setDir(-1); setStep((s) => s - 1); }, []);
+  const go = useCallback((to: number) => {
+    setTransitioning(true);
+    setDir(to > step ? 1 : -1);
+    setTimeout(() => {
+      setStep(to);
+      setTransitioning(false);
+      scrollRef.current?.scrollTo({ top: 0, behavior: "instant" });
+    }, 180);
+  }, [step]);
+
+  const next = useCallback(() => {
+    setTransitioning(true);
+    setDir(1);
+    setTimeout(() => {
+      setStep((s) => s + 1);
+      setTransitioning(false);
+      scrollRef.current?.scrollTo({ top: 0, behavior: "instant" });
+    }, 180);
+  }, []);
+
+  const back = useCallback(() => {
+    setTransitioning(true);
+    setDir(-1);
+    setTimeout(() => {
+      setStep((s) => s - 1);
+      setTransitioning(false);
+      scrollRef.current?.scrollTo({ top: 0, behavior: "instant" });
+    }, 180);
+  }, []);
 
   const svc = SERVICES.find((s) => s.id === booking.service);
   const carType = CAR_TYPES.find((c) => c.id === booking.carType);
@@ -120,7 +148,7 @@ const BookingApp = () => {
   const canContinue = () => {
     if (step === 0) return !!booking.service;
     if (step === 1) return !!booking.carType;
-    if (step === 2) return true; // addons optional
+    if (step === 2) return true;
     if (step === 3) return !!booking.date && !!booking.window;
     if (step === 4) return booking.name && booking.phone && booking.address && booking.postcode;
     if (step === 5) return true;
@@ -159,13 +187,10 @@ const BookingApp = () => {
   if (confirmed) {
     const selectedAddons = ADDONS.filter((a) => booking.addons.includes(a.id));
     return (
-      <div className="min-h-svh bg-background flex flex-col px-5 py-8 max-w-lg mx-auto">
-
-        {/* Confetti-style top accent */}
+      <div className="min-h-svh bg-background flex flex-col px-5 py-8 pb-safe max-w-lg mx-auto">
         <motion.div initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ duration: 0.5, ease: "easeOut" }}
           className="h-1 w-full rounded-full bg-gradient-to-r from-success via-success/60 to-success/20 mb-8 origin-left" />
 
-        {/* Success icon + headline */}
         <div className="flex flex-col items-center text-center mb-6">
           <motion.div initial={{ scale: 0, rotate: -90 }} animate={{ scale: 1, rotate: 0 }}
             transition={{ type: "spring", stiffness: 200, damping: 14 }}
@@ -182,19 +207,15 @@ const BookingApp = () => {
           </motion.p>
         </div>
 
-        {/* Status pill */}
         <motion.div initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.35 }}
-          className="flex items-center gap-2.5 bg-premium-muted rounded-xl px-4 py-3 mb-5 mx-auto">
+          className="flex items-center gap-2.5 bg-premium-muted rounded-2xl px-4 py-3.5 mb-5 mx-auto">
           <motion.div animate={{ scale: [1, 1.3, 1] }} transition={{ duration: 2, repeat: Infinity }}
             className="w-2 h-2 rounded-full bg-premium" />
           <span className="text-xs font-semibold text-foreground">Cleaner will be assigned shortly</span>
         </motion.div>
 
-        {/* Summary card */}
         <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.4 }}
           className="rounded-2xl border border-border overflow-hidden">
-
-          {/* Header with total */}
           <div className="bg-foreground text-background px-5 py-4 flex items-center justify-between">
             <div>
               <span className="text-[10px] font-bold uppercase tracking-widest text-background/60 block">Booking total</span>
@@ -205,10 +226,9 @@ const BookingApp = () => {
             </div>
           </div>
 
-          {/* Service + Car */}
           <div className="p-4 flex items-center gap-3.5 bg-card border-b border-border">
-            <div className={cn("w-11 h-11 rounded-xl flex items-center justify-center shrink-0", svc?.color)}>
-              {svc && <svc.icon size={20} />}
+            <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center shrink-0", svc?.color)}>
+              {svc && <svc.icon size={22} />}
             </div>
             <div className="flex-1 min-w-0">
               <p className="font-bold text-sm text-foreground">{svc?.title}</p>
@@ -217,7 +237,6 @@ const BookingApp = () => {
             <span className="font-extrabold tabular-nums text-foreground">£{servicePrice}</span>
           </div>
 
-          {/* Details grid */}
           <div className="p-4 space-y-3 bg-card">
             {[
               { icon: CalendarIcon, label: "Date", value: booking.date ? format(booking.date, "EEEE, d MMMM yyyy") : "" },
@@ -227,8 +246,8 @@ const BookingApp = () => {
             ].map(({ icon: Ic, label, value }, i) => (
               <motion.div key={label} initial={{ x: -8, opacity: 0 }} animate={{ x: 0, opacity: 1 }}
                 transition={{ delay: 0.5 + i * 0.05 }} className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center shrink-0">
-                  <Ic size={14} className="text-muted-foreground" />
+                <div className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center shrink-0">
+                  <Ic size={15} className="text-muted-foreground" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{label}</p>
@@ -237,7 +256,6 @@ const BookingApp = () => {
               </motion.div>
             ))}
 
-            {/* Add-ons */}
             {selectedAddons.length > 0 && (
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.7 }}
                 className="pt-3 mt-1 border-t border-border space-y-2">
@@ -252,7 +270,6 @@ const BookingApp = () => {
             )}
           </div>
 
-          {/* Price breakdown footer */}
           <div className="bg-muted/50 px-4 py-3 border-t border-border space-y-1.5">
             <div className="flex justify-between text-xs text-muted-foreground">
               <span>Service ({carType?.label})</span>
@@ -271,18 +288,16 @@ const BookingApp = () => {
           </div>
         </motion.div>
 
-        {/* Trust row */}
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.8 }}
           className="flex items-center gap-2 justify-center text-xs text-muted-foreground mt-4">
           <Shield size={13} className="text-success" />
           <span>Fully insured · Free cancellation · Secure booking</span>
         </motion.div>
 
-        {/* Actions */}
         <motion.div initial={{ y: 12, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.85 }}
           className="mt-6 space-y-3">
           <motion.button whileTap={{ scale: 0.97 }} onClick={reset}
-            className="w-full bg-foreground text-background font-bold text-[15px] py-4 rounded-xl flex items-center justify-center gap-2">
+            className="w-full bg-foreground text-background font-bold text-[15px] h-14 rounded-2xl flex items-center justify-center gap-2 active:scale-[0.97] transition-transform">
             Book Another Wash <ChevronRight size={16} />
           </motion.button>
         </motion.div>
@@ -290,20 +305,18 @@ const BookingApp = () => {
     );
   }
 
-
-
   /* ═══════════ MAIN ═══════════ */
   return (
     <div className="min-h-svh bg-background text-foreground font-sans flex flex-col">
 
       {/* ─── Top Nav ─── */}
-      <nav className="sticky top-0 z-30 bg-background/95 backdrop-blur-xl border-b border-border">
-        <div className="max-w-lg mx-auto px-5 py-3 flex items-center justify-between">
+      <nav className="sticky top-0 z-30 bg-background/95 backdrop-blur-xl border-b border-border pt-safe">
+        <div className="max-w-lg mx-auto px-5 py-3.5 flex items-center justify-between">
           <div className="flex items-center gap-2">
             {step > 0 ? (
-              <motion.button whileTap={{ scale: 0.9 }} onClick={back}
-                className="w-8 h-8 rounded-full flex items-center justify-center hover:bg-muted transition-colors -ml-1 mr-1">
-                <ArrowLeft size={18} />
+              <motion.button whileTap={{ scale: 0.85 }} onClick={back}
+                className="w-10 h-10 rounded-full flex items-center justify-center hover:bg-muted active:bg-muted transition-colors -ml-1 mr-1">
+                <ArrowLeft size={20} />
               </motion.button>
             ) : null}
             <span className="text-lg font-extrabold tracking-tight">Valet Ease</span>
@@ -313,27 +326,47 @@ const BookingApp = () => {
             <span className="font-semibold text-foreground tabular-nums">{step + 1}/{TOTAL_STEPS}</span>
           </span>
         </div>
-        <div className="max-w-lg mx-auto px-5 flex gap-1">
+        {/* Progress bar */}
+        <div className="max-w-lg mx-auto px-5 pb-0.5 flex gap-1">
           {Array.from({ length: TOTAL_STEPS }, (_, i) => (
             <div key={i} className="h-[3px] flex-1 rounded-full overflow-hidden bg-border">
               <motion.div className="h-full bg-foreground rounded-full" initial={false}
                 animate={{ width: step > i ? "100%" : step === i ? "40%" : "0%" }}
-                transition={{ duration: 0.4, ease: "easeOut" }} />
+                transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }} />
             </div>
           ))}
         </div>
       </nav>
 
       {/* ─── Content ─── */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div ref={scrollRef} className="flex-1 flex flex-col overflow-y-auto overflow-x-hidden scroll-smooth">
+
+        {/* Step transition shimmer */}
+        <AnimatePresence>
+          {transitioning && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.1 }}
+              className="absolute inset-0 z-20 bg-background flex flex-col items-center pt-32 gap-4 px-6 max-w-lg mx-auto w-full"
+            >
+              <div className="w-3/4 h-4 rounded-lg bg-muted animate-pulse" />
+              <div className="w-1/2 h-3 rounded-lg bg-muted/60 animate-pulse" />
+              <div className="w-full h-20 rounded-2xl bg-muted/40 animate-pulse mt-4" />
+              <div className="w-full h-20 rounded-2xl bg-muted/30 animate-pulse" />
+              <div className="w-full h-20 rounded-2xl bg-muted/20 animate-pulse" />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         <AnimatePresence mode="wait" custom={dir}>
 
           {/* ══════ STEP 0: Service ══════ */}
           {step === 0 && (
-            <motion.div key="s0" custom={dir} variants={slideVariants} initial="enter" animate="center" exit="exit" transition={ease}
-              className="flex-1 max-w-lg mx-auto w-full px-5 pt-6 pb-32">
+            <motion.div key="s0" custom={dir} variants={slideVariants} initial="enter" animate="center" exit="exit" transition={springTransition}
+              className="flex-1 max-w-lg mx-auto w-full px-5 pt-6 pb-36">
 
-              {/* Car hero */}
               <motion.div initial={{ y: 14, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.05 }}
                 className="flex justify-center mb-2">
                 <img src={carIllustration} alt="Premium car detailing" width={260} height={166} className="object-contain" />
@@ -347,10 +380,10 @@ const BookingApp = () => {
                   const Icon = s.icon;
                   return (
                     <motion.button key={s.id} initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.08 + i * 0.06, ...ease }} whileTap={{ scale: 0.98 }}
+                      transition={{ delay: 0.08 + i * 0.06, ...springTransition }} whileTap={{ scale: 0.97 }}
                       onClick={() => setBooking({ ...booking, service: s.id })}
                       className={cn(
-                        "w-full rounded-2xl text-left p-4 transition-all duration-200",
+                        "w-full rounded-2xl text-left p-4 transition-all duration-200 active:scale-[0.97]",
                         selected ? "ring-2 ring-foreground bg-card shadow-[var(--shadow-glow)]" : "ring-1 ring-border bg-card"
                       )}>
                       <div className="flex items-center gap-3.5">
@@ -383,8 +416,8 @@ const BookingApp = () => {
 
           {/* ══════ STEP 1: Car Type ══════ */}
           {step === 1 && (
-            <motion.div key="s1" custom={dir} variants={slideVariants} initial="enter" animate="center" exit="exit" transition={ease}
-              className="flex-1 max-w-lg mx-auto w-full px-5 pt-6 pb-32">
+            <motion.div key="s1" custom={dir} variants={slideVariants} initial="enter" animate="center" exit="exit" transition={springTransition}
+              className="flex-1 max-w-lg mx-auto w-full px-5 pt-6 pb-36">
               <StepHeader title="What's your car size?" sub="Pricing adjusts based on vehicle" />
 
               <div className="grid grid-cols-2 gap-3 mt-5">
@@ -394,17 +427,16 @@ const BookingApp = () => {
                   const adjustedPrice = Math.round(svcPrice * c.multiplier);
                   return (
                     <motion.button key={c.id} initial={{ opacity: 0, y: 16, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }}
-                      transition={{ delay: 0.06 + i * 0.06, ...ease }}
-                      whileTap={{ scale: 0.95 }}
+                      transition={{ delay: 0.06 + i * 0.06, ...springTransition }}
+                      whileTap={{ scale: 0.94 }}
                       onClick={() => setBooking({ ...booking, carType: c.id })}
                       className={cn(
-                        "relative rounded-2xl text-center transition-all duration-300 overflow-hidden flex flex-col",
+                        "relative rounded-2xl text-center transition-all duration-300 overflow-hidden flex flex-col active:scale-[0.94]",
                         selected
                           ? "ring-2 ring-foreground bg-card shadow-[var(--shadow-glow)]"
                           : "ring-1 ring-border bg-card hover:shadow-[var(--shadow-elevated)]"
                       )}>
 
-                      {/* Tag */}
                       {c.tag && (
                         <div className="absolute top-2 right-2 z-10">
                           <span className="text-[8px] font-bold uppercase tracking-wider bg-foreground text-background px-2 py-0.5 rounded-full">
@@ -413,7 +445,6 @@ const BookingApp = () => {
                         </div>
                       )}
 
-                      {/* Car image */}
                       <div className={cn(
                         "relative h-24 flex items-end justify-center pt-3 px-2 transition-colors duration-300",
                         selected ? "bg-muted/80" : "bg-muted/40"
@@ -430,7 +461,6 @@ const BookingApp = () => {
                         />
                       </div>
 
-                      {/* Info */}
                       <div className="p-3 flex flex-col items-center gap-0.5">
                         <span className="font-bold text-sm text-foreground">{c.label}</span>
                         <span className="text-[10px] text-muted-foreground leading-tight">{c.example}</span>
@@ -440,13 +470,12 @@ const BookingApp = () => {
                         )}
                       </div>
 
-                      {/* Selection indicator */}
                       <motion.div
                         className="absolute bottom-2 right-2"
                         animate={selected ? { scale: 1 } : { scale: 0 }}
                         transition={{ type: "spring", stiffness: 500, damping: 25 }}>
-                        <div className="w-5 h-5 rounded-full bg-foreground text-background flex items-center justify-center">
-                          <Check size={11} strokeWidth={3} />
+                        <div className="w-6 h-6 rounded-full bg-foreground text-background flex items-center justify-center">
+                          <Check size={12} strokeWidth={3} />
                         </div>
                       </motion.div>
                     </motion.button>
@@ -458,13 +487,12 @@ const BookingApp = () => {
 
           {/* ══════ STEP 2: Add-ons ══════ */}
           {step === 2 && (
-            <motion.div key="s2" custom={dir} variants={slideVariants} initial="enter" animate="center" exit="exit" transition={ease}
-              className="flex-1 max-w-lg mx-auto w-full px-5 pt-6 pb-32">
+            <motion.div key="s2" custom={dir} variants={slideVariants} initial="enter" animate="center" exit="exit" transition={springTransition}
+              className="flex-1 max-w-lg mx-auto w-full px-5 pt-6 pb-36">
               <StepHeader title="Any extras?" sub="Optional add-ons for a perfect finish" />
 
-              {/* Live price summary */}
               <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
-                className="mt-4 mb-5 rounded-xl bg-muted/60 p-3.5">
+                className="mt-4 mb-5 rounded-2xl bg-muted/60 p-4">
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">{svc?.title} · {carType?.label}</span>
                   <span className="font-semibold text-foreground tabular-nums">£{servicePrice}</span>
@@ -497,14 +525,14 @@ const BookingApp = () => {
                   const Icon = a.icon;
                   return (
                     <motion.button key={a.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.06 + i * 0.05, ...ease }} whileTap={{ scale: 0.98 }}
+                      transition={{ delay: 0.06 + i * 0.05, ...springTransition }} whileTap={{ scale: 0.97 }}
                       onClick={() => toggleAddon(a.id)}
                       className={cn(
-                        "w-full rounded-2xl p-4 text-left transition-all duration-200 flex items-center gap-3.5",
+                        "w-full rounded-2xl p-4 text-left transition-all duration-200 flex items-center gap-3.5 active:scale-[0.97]",
                         selected ? "ring-2 ring-foreground bg-card shadow-[var(--shadow-glow)]" : "ring-1 ring-border bg-card"
                       )}>
                       <div className={cn(
-                        "w-11 h-11 rounded-xl flex items-center justify-center shrink-0 transition-colors",
+                        "w-12 h-12 rounded-xl flex items-center justify-center shrink-0 transition-colors",
                         selected ? "bg-foreground text-background" : "bg-muted text-muted-foreground"
                       )}>
                         <Icon size={20} />
@@ -518,12 +546,12 @@ const BookingApp = () => {
                         selected ? "text-foreground" : "text-muted-foreground"
                       )}>+£{a.price}</span>
                       <div className={cn(
-                        "w-5 h-5 rounded flex items-center justify-center transition-all shrink-0",
-                        selected ? "bg-foreground text-background" : "border-2 border-border rounded"
+                        "w-6 h-6 rounded-lg flex items-center justify-center transition-all shrink-0",
+                        selected ? "bg-foreground text-background" : "border-2 border-border rounded-lg"
                       )}>
                         {selected && (
                           <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 500, damping: 20 }}>
-                            <Check size={12} strokeWidth={3} />
+                            <Check size={13} strokeWidth={3} />
                           </motion.div>
                         )}
                       </div>
@@ -533,7 +561,7 @@ const BookingApp = () => {
               </div>
 
               <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.35 }}
-                className="text-xs text-muted-foreground text-center mt-4">
+                className="text-xs text-muted-foreground text-center mt-5">
                 No extras? Just tap Continue to skip.
               </motion.p>
             </motion.div>
@@ -541,10 +569,9 @@ const BookingApp = () => {
 
           {/* ══════ STEP 3: Schedule ══════ */}
           {step === 3 && (
-            <motion.div key="s3" custom={dir} variants={slideVariants} initial="enter" animate="center" exit="exit" transition={ease}
-              className="flex-1 max-w-lg mx-auto w-full px-5 pt-6 pb-32"
+            <motion.div key="s3" custom={dir} variants={slideVariants} initial="enter" animate="center" exit="exit" transition={springTransition}
+              className="flex-1 max-w-lg mx-auto w-full px-5 pt-6 pb-36"
               onAnimationComplete={() => {
-                // Auto-select tomorrow + next available slot on first visit
                 if (!booking.date) {
                   const tomorrow = dateOptions[0];
                   const nextSlot = WINDOWS.find((w) => w.tag) || WINDOWS[0];
@@ -552,16 +579,14 @@ const BookingApp = () => {
                 }
               }}>
 
-              {/* Urgency banner */}
               <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
-                className="flex items-center gap-2 bg-warning-muted rounded-xl px-3.5 py-2.5 mb-5">
+                className="flex items-center gap-2 bg-warning-muted rounded-2xl px-4 py-3 mb-5">
                 <AlertCircle size={14} className="text-warning shrink-0" />
                 <span className="text-xs font-semibold text-foreground">Limited slots available today — book now to secure your spot</span>
               </motion.div>
 
               <StepHeader title="When works for you?" sub="We've pre-selected the best option" />
 
-              {/* Date chips */}
               <div className="mt-5 mb-6">
                 <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3 flex items-center gap-1.5">
                   <CalendarIcon size={11} /> Select date
@@ -571,10 +596,10 @@ const BookingApp = () => {
                     const isSelected = booking.date && isSameDay(booking.date, d);
                     return (
                       <motion.button key={d.toISOString()} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: 0.03 + i * 0.02 }} whileTap={{ scale: 0.95 }}
+                        transition={{ delay: 0.03 + i * 0.02 }} whileTap={{ scale: 0.92 }}
                         onClick={() => setBooking({ ...booking, date: d })}
                         className={cn(
-                          "flex flex-col items-center min-w-[58px] py-2.5 px-2 rounded-xl transition-all shrink-0 relative",
+                          "flex flex-col items-center min-w-[60px] py-3 px-2.5 rounded-2xl transition-all shrink-0 relative active:scale-[0.92]",
                           isSelected ? "bg-foreground text-background ring-2 ring-foreground shadow-[var(--shadow-glow)]" : "bg-card ring-1 ring-border"
                         )}>
                         {i === 0 && !isSelected && (
@@ -597,28 +622,27 @@ const BookingApp = () => {
                 </div>
               </div>
 
-              {/* Time slots */}
               <div>
                 <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3 flex items-center gap-1.5">
                   <Clock size={11} /> Choose a time slot
                 </p>
-                <div className="space-y-2.5">
+                <div className="space-y-3">
                   {WINDOWS.map((w, i) => {
                     const isSelected = booking.window === w.id;
                     const WIcon = w.icon;
                     const isLow = w.slots <= 2;
                     return (
                       <motion.button key={w.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.1 + i * 0.06 }} whileTap={{ scale: 0.98 }}
+                        transition={{ delay: 0.1 + i * 0.06 }} whileTap={{ scale: 0.97 }}
                         onClick={() => setBooking({ ...booking, window: w.id })}
                         className={cn(
-                          "w-full rounded-2xl p-4 flex items-center gap-3.5 transition-all duration-200 relative overflow-hidden",
+                          "w-full rounded-2xl p-4 flex items-center gap-3.5 transition-all duration-200 relative overflow-hidden active:scale-[0.97]",
                           isSelected
                             ? "bg-foreground text-background ring-2 ring-foreground shadow-[var(--shadow-glow)]"
                             : "bg-card ring-1 ring-border"
                         )}>
                         <div className={cn(
-                          "w-11 h-11 rounded-xl flex items-center justify-center shrink-0 transition-colors",
+                          "w-12 h-12 rounded-xl flex items-center justify-center shrink-0 transition-colors",
                           isSelected ? "bg-background/15" : w.color
                         )}>
                           <WIcon size={20} className={isSelected ? "text-background" : ""} />
@@ -658,16 +682,13 @@ const BookingApp = () => {
 
           {/* ══════ STEP 4: Location ══════ */}
           {step === 4 && (
-            <motion.div key="s4" custom={dir} variants={slideVariants} initial="enter" animate="center" exit="exit" transition={ease}
-              className="flex-1 max-w-lg mx-auto w-full px-5 pt-6 pb-32">
+            <motion.div key="s4" custom={dir} variants={slideVariants} initial="enter" animate="center" exit="exit" transition={springTransition}
+              className="flex-1 max-w-lg mx-auto w-full px-5 pt-6 pb-36">
 
-              {/* Map visual — Uber style */}
               <motion.div initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }}
                 className="rounded-2xl overflow-hidden bg-muted relative h-[140px] flex items-center justify-center mb-5">
-                {/* Grid lines */}
                 <div className="absolute inset-0 opacity-[0.06]"
                   style={{ backgroundImage: `linear-gradient(hsl(var(--foreground)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--foreground)) 1px, transparent 1px)`, backgroundSize: "40px 40px" }} />
-                {/* Radial pulse */}
                 <motion.div
                   animate={{ scale: [1, 1.8, 1], opacity: [0.15, 0, 0.15] }}
                   transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
@@ -676,7 +697,6 @@ const BookingApp = () => {
                   animate={{ scale: [1, 1.4, 1], opacity: [0.1, 0, 0.1] }}
                   transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut", delay: 0.3 }}
                   className="absolute w-14 h-14 rounded-full bg-foreground/10" />
-                {/* Pin */}
                 <motion.div animate={{ y: [0, -6, 0] }} transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
                   className="flex flex-col items-center gap-1 relative z-10">
                   <div className="w-10 h-10 rounded-full bg-foreground text-background flex items-center justify-center shadow-lg">
@@ -684,21 +704,19 @@ const BookingApp = () => {
                   </div>
                   <div className="w-2 h-2 rounded-full bg-foreground/30" />
                 </motion.div>
-                {/* "We come to you" overlay */}
                 <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
-                  className="absolute bottom-3 left-3 bg-background/90 backdrop-blur-sm rounded-lg px-3 py-1.5 flex items-center gap-1.5">
+                  className="absolute bottom-3 left-3 bg-background/90 backdrop-blur-sm rounded-xl px-3 py-1.5 flex items-center gap-1.5">
                   <Car size={12} className="text-foreground" />
                   <span className="text-[11px] font-bold text-foreground">We come to you</span>
                 </motion.div>
               </motion.div>
 
-              {/* Saved addresses */}
               <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
                 <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2.5 flex items-center gap-1.5">
                   <Bookmark size={10} /> Quick options
                 </p>
-                <div className="flex gap-2 mb-5">
-                  <motion.button whileTap={{ scale: 0.97 }}
+                <div className="flex gap-2.5 mb-5">
+                  <motion.button whileTap={{ scale: 0.96 }}
                     onClick={() => {
                       if (navigator.geolocation) {
                         toast.info("Detecting your location…");
@@ -711,20 +729,20 @@ const BookingApp = () => {
                         );
                       }
                     }}
-                    className="flex-1 flex items-center gap-2.5 px-3.5 py-3 rounded-xl bg-accent text-foreground font-semibold text-sm ring-1 ring-border transition-colors hover:bg-accent/80">
-                    <div className="w-8 h-8 rounded-lg bg-foreground text-background flex items-center justify-center shrink-0">
-                      <LocateFixed size={14} />
+                    className="flex-1 flex items-center gap-2.5 px-3.5 py-3.5 rounded-2xl bg-accent text-foreground font-semibold text-sm ring-1 ring-border transition-colors active:bg-accent/80">
+                    <div className="w-9 h-9 rounded-xl bg-foreground text-background flex items-center justify-center shrink-0">
+                      <LocateFixed size={15} />
                     </div>
                     <div className="text-left">
                       <span className="font-bold text-xs block text-foreground">Current location</span>
                       <span className="text-[10px] text-muted-foreground">Use GPS</span>
                     </div>
                   </motion.button>
-                  <motion.button whileTap={{ scale: 0.97 }}
+                  <motion.button whileTap={{ scale: 0.96 }}
                     onClick={() => setBooking((b) => ({ ...b, postcode: "", address: "" }))}
-                    className="flex-1 flex items-center gap-2.5 px-3.5 py-3 rounded-xl bg-card text-foreground font-semibold text-sm ring-1 ring-border transition-colors hover:bg-muted">
-                    <div className="w-8 h-8 rounded-lg bg-muted text-muted-foreground flex items-center justify-center shrink-0">
-                      <Search size={14} />
+                    className="flex-1 flex items-center gap-2.5 px-3.5 py-3.5 rounded-2xl bg-card text-foreground font-semibold text-sm ring-1 ring-border transition-colors active:bg-muted">
+                    <div className="w-9 h-9 rounded-xl bg-muted text-muted-foreground flex items-center justify-center shrink-0">
+                      <Search size={15} />
                     </div>
                     <div className="text-left">
                       <span className="font-bold text-xs block text-foreground">Search address</span>
@@ -734,25 +752,22 @@ const BookingApp = () => {
                 </div>
               </motion.div>
 
-              {/* Address fields */}
               <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
-                className="space-y-3.5">
-
-                {/* Postcode with inline lookup feel */}
+                className="space-y-4">
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
                     <MapPin size={11} /> Postcode
                   </label>
                   <div className="relative">
                     <input type="text" placeholder="e.g. SW1A 1AA"
-                      className="w-full bg-card rounded-xl pl-4 pr-12 py-3.5 text-sm font-medium placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-foreground/10 ring-1 ring-border transition-all"
+                      className="w-full bg-card rounded-2xl pl-4 pr-12 h-13 text-sm font-medium placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-foreground/10 ring-1 ring-border transition-all"
                       value={booking.postcode}
                       onChange={(e) => setBooking({ ...booking, postcode: e.target.value.toUpperCase() })} />
                     <AnimatePresence>
                       {booking.postcode.length >= 5 && (
                         <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-success/15 flex items-center justify-center">
-                          <Check size={12} className="text-success" strokeWidth={3} />
+                          className="absolute right-3 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-success/15 flex items-center justify-center">
+                          <Check size={13} className="text-success" strokeWidth={3} />
                         </motion.div>
                       )}
                     </AnimatePresence>
@@ -770,15 +785,13 @@ const BookingApp = () => {
                 </div>
               </motion.div>
 
-              {/* Save address toggle */}
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}
-                className="mt-5 flex items-center gap-3 px-4 py-3 rounded-xl bg-muted/60 ring-1 ring-border">
+                className="mt-5 flex items-center gap-3 px-4 py-3.5 rounded-2xl bg-muted/60 ring-1 ring-border">
                 <Bookmark size={14} className="text-muted-foreground shrink-0" />
                 <span className="text-xs text-muted-foreground flex-1">Save this address for next time</span>
                 <SaveToggle />
               </motion.div>
 
-              {/* Trust badges */}
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.35 }}
                 className="mt-4 flex items-center gap-4 justify-center">
                 {[
@@ -795,14 +808,13 @@ const BookingApp = () => {
 
           {/* ══════ STEP 5: Confirm ══════ */}
           {step === 5 && (
-            <motion.div key="s5" custom={dir} variants={slideVariants} initial="enter" animate="center" exit="exit" transition={ease}
-              className="flex-1 max-w-lg mx-auto w-full px-5 pt-6 pb-32">
+            <motion.div key="s5" custom={dir} variants={slideVariants} initial="enter" animate="center" exit="exit" transition={springTransition}
+              className="flex-1 max-w-lg mx-auto w-full px-5 pt-6 pb-36">
               <StepHeader title="Review your booking" sub="Make sure everything looks good" />
 
               <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
                 className="mt-5 rounded-2xl border border-border overflow-hidden">
 
-                {/* Service header */}
                 <div className="p-4 flex items-center gap-3.5 bg-card">
                   <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center shrink-0", svc?.color)}>
                     {svc && <svc.icon size={22} />}
@@ -816,8 +828,7 @@ const BookingApp = () => {
 
                 <div className="h-px bg-border" />
 
-                {/* Details */}
-                <div className="p-4 space-y-3 bg-card">
+                <div className="p-4 space-y-3.5 bg-card">
                   {[
                     { icon: CalendarIcon, label: "Date", value: booking.date ? format(booking.date, "EEE, d MMM yyyy") : "" },
                     { icon: Clock, label: "Time", value: WINDOWS.find((w) => w.id === booking.window)?.time },
@@ -826,8 +837,8 @@ const BookingApp = () => {
                   ].map(({ icon: Ic, label, value }, i) => (
                     <motion.div key={label} initial={{ x: -6, opacity: 0 }} animate={{ x: 0, opacity: 1 }}
                       transition={{ delay: 0.15 + i * 0.04 }} className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center shrink-0">
-                        <Ic size={14} className="text-muted-foreground" />
+                      <div className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center shrink-0">
+                        <Ic size={15} className="text-muted-foreground" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{label}</p>
@@ -836,7 +847,6 @@ const BookingApp = () => {
                     </motion.div>
                   ))}
 
-                  {/* Add-ons */}
                   {booking.addons.length > 0 && (
                     <div className="pt-2 border-t border-border space-y-2">
                       {ADDONS.filter((a) => booking.addons.includes(a.id)).map((a) => (
@@ -851,8 +861,7 @@ const BookingApp = () => {
                   )}
                 </div>
 
-                {/* Total */}
-                <div className="bg-muted/50 px-4 py-3.5 flex justify-between items-center border-t border-border">
+                <div className="bg-muted/50 px-4 py-4 flex justify-between items-center border-t border-border">
                   <span className="font-bold text-foreground text-sm">Total</span>
                   <span className="text-2xl font-extrabold tabular-nums text-foreground">£{total}</span>
                 </div>
@@ -874,8 +883,8 @@ const BookingApp = () => {
         {!confirmed && (
           <motion.div initial={{ y: 100 }} animate={{ y: 0 }} exit={{ y: 100 }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="fixed bottom-0 inset-x-0 z-40 bg-background/95 backdrop-blur-xl border-t border-border">
-            <div className="max-w-lg mx-auto px-5 py-3.5 flex items-center gap-4">
+            className="fixed bottom-0 inset-x-0 z-40 bg-background/95 backdrop-blur-xl border-t border-border pb-safe">
+            <div className="max-w-lg mx-auto px-5 py-4 flex items-center gap-4">
               <div className="flex-1 min-w-0">
                 {step >= 1 && total > 0 ? (
                   <div>
@@ -899,10 +908,10 @@ const BookingApp = () => {
                 )}
               </div>
               <motion.button
-                whileTap={canContinue() ? { scale: 0.97 } : {}}
-                disabled={!canContinue() || submitting}
+                whileTap={canContinue() ? { scale: 0.95 } : {}}
+                disabled={!canContinue() || submitting || transitioning}
                 onClick={step === 5 ? confirm : next}
-                className="flex-[1.5] bg-foreground text-background font-bold text-[15px] py-4 rounded-xl flex items-center justify-center gap-2 transition-all disabled:opacity-30">
+                className="flex-[1.5] bg-foreground text-background font-bold text-[15px] h-14 rounded-2xl flex items-center justify-center gap-2 transition-all disabled:opacity-30 active:scale-[0.95]">
                 {step === 5 ? (
                   <>Confirm · £{total} <CheckCircle2 size={16} /></>
                 ) : step === 2 ? (
@@ -930,14 +939,14 @@ const StepHeader = ({ title, sub }: { title: string; sub: string }) => (
 
 const RadioDot = ({ selected, inverted }: { selected: boolean; inverted?: boolean }) => (
   <div className={cn(
-    "w-5 h-5 rounded-full flex items-center justify-center transition-all",
+    "w-6 h-6 rounded-full flex items-center justify-center transition-all",
     selected
       ? inverted ? "bg-background text-foreground" : "bg-foreground text-background"
       : "border-2 border-border"
   )}>
     {selected && (
       <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 500, damping: 20 }}>
-        <Check size={11} strokeWidth={3} />
+        <Check size={12} strokeWidth={3} />
       </motion.div>
     )}
   </div>
@@ -959,7 +968,7 @@ const InputField = ({ icon: Icon, label, placeholder, value, onChange, delay = 0
       <Icon size={11} /> {label}
     </label>
     <input type={type} placeholder={placeholder}
-      className="w-full bg-card rounded-xl px-4 py-3.5 text-sm font-medium placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-foreground/10 ring-1 ring-border transition-all"
+      className="w-full bg-card rounded-2xl px-4 h-13 text-sm font-medium placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-foreground/10 ring-1 ring-border transition-all"
       value={value} onChange={(e) => onChange(e.target.value)} />
   </motion.div>
 );
@@ -969,14 +978,13 @@ const SaveToggle = () => {
   return (
     <button onClick={() => { setOn(!on); if (!on) toast.success("Address will be saved"); }}
       className={cn(
-        "w-10 h-6 rounded-full transition-colors relative shrink-0",
+        "w-12 h-7 rounded-full transition-colors relative shrink-0",
         on ? "bg-foreground" : "bg-border"
       )}>
       <motion.div
-        className="w-4.5 h-4.5 rounded-full bg-background absolute top-[3px] shadow-sm"
-        animate={{ left: on ? 20 : 3 }}
+        className="w-5 h-5 rounded-full bg-background absolute top-[4px] shadow-sm"
+        animate={{ left: on ? 24 : 4 }}
         transition={{ type: "spring", stiffness: 500, damping: 30 }}
-        style={{ width: 18, height: 18 }}
       />
     </button>
   );
