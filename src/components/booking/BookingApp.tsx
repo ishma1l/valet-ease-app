@@ -823,7 +823,7 @@ const BookingApp = () => {
 
               <div className="mt-5">
                 <div className="grid grid-cols-4 gap-2.5">
-                  {dateOptions.slice(0, 8).map((d, i) => {
+                  {(showAllDates ? dateOptions : dateOptions.slice(0, 8)).map((d, i) => {
                     const isSelected = booking.date && isSameDay(booking.date, d);
                     return (
                       <motion.button key={d.toISOString()} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
@@ -853,10 +853,13 @@ const BookingApp = () => {
                   })}
                 </div>
 
-                <motion.button initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}
-                  className="w-full mt-3 text-center text-xs text-muted-foreground font-medium py-2 active:text-foreground transition-colors">
-                  Show more dates →
-                </motion.button>
+                {!showAllDates && (
+                  <motion.button initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}
+                    onClick={() => setShowAllDates(true)}
+                    className="w-full mt-3 text-center text-xs text-muted-foreground font-medium py-2 hover:text-foreground active:text-foreground transition-colors">
+                    Show more dates →
+                  </motion.button>
+                )}
               </div>
             </motion.div>
           )}
