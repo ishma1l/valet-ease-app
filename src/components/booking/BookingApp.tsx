@@ -89,6 +89,7 @@ const BookingApp = () => {
   const [dir, setDir] = useState(1);
   const [submitting, setSubmitting] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
+  const [showAllDates, setShowAllDates] = useState(false);
   const [booking, setBooking] = useState<BookingState>({
     service: null, carType: null, addons: [], plan: "weekly" as PlanType, date: undefined,
     window: "", name: "", phone: "", address: "", postcode: "",
