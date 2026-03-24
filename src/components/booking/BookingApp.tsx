@@ -139,8 +139,13 @@ const BookingApp = () => {
     return (
       <div className="min-h-svh bg-background flex flex-col items-center justify-center px-6">
         <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex flex-col items-center gap-6">
-          <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-            className="w-14 h-14 rounded-full border-[2.5px] border-muted border-t-foreground" />
+          <div className="relative">
+            <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+              className="w-16 h-16 rounded-full border-[3px] border-muted border-t-foreground" />
+            <div className="absolute inset-0 flex items-center justify-center">
+              <Sparkles size={20} className="text-foreground" />
+            </div>
+          </div>
           <div className="text-center">
             <p className="font-bold text-lg text-foreground">Confirming your booking</p>
             <p className="text-muted-foreground text-sm mt-1">This will only take a moment…</p>
@@ -152,42 +157,138 @@ const BookingApp = () => {
 
   /* ─── Success ─── */
   if (confirmed) {
+    const selectedAddons = ADDONS.filter((a) => booking.addons.includes(a.id));
     return (
-      <div className="min-h-svh bg-background flex flex-col items-center justify-center px-6 py-12">
-        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 200, damping: 14 }}
-          className="w-20 h-20 rounded-full bg-success/10 flex items-center justify-center mb-6">
-          <CheckCircle2 size={44} className="text-success" />
+      <div className="min-h-svh bg-background flex flex-col px-5 py-8 max-w-lg mx-auto">
+
+        {/* Confetti-style top accent */}
+        <motion.div initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ duration: 0.5, ease: "easeOut" }}
+          className="h-1 w-full rounded-full bg-gradient-to-r from-success via-success/60 to-success/20 mb-8 origin-left" />
+
+        {/* Success icon + headline */}
+        <div className="flex flex-col items-center text-center mb-6">
+          <motion.div initial={{ scale: 0, rotate: -90 }} animate={{ scale: 1, rotate: 0 }}
+            transition={{ type: "spring", stiffness: 200, damping: 14 }}
+            className="w-20 h-20 rounded-full bg-success/10 flex items-center justify-center mb-5">
+            <CheckCircle2 size={44} className="text-success" />
+          </motion.div>
+          <motion.h1 initial={{ y: 16, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }}
+            className="text-2xl font-extrabold tracking-tight text-foreground">
+            Your wash is booked!
+          </motion.h1>
+          <motion.p initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.3 }}
+            className="text-muted-foreground text-sm mt-1.5 max-w-[280px] leading-relaxed">
+            We'll text <span className="font-semibold text-foreground">{booking.phone}</span> 30 minutes before arrival.
+          </motion.p>
+        </div>
+
+        {/* Status pill */}
+        <motion.div initial={{ y: 10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.35 }}
+          className="flex items-center gap-2.5 bg-premium-muted rounded-xl px-4 py-3 mb-5 mx-auto">
+          <motion.div animate={{ scale: [1, 1.3, 1] }} transition={{ duration: 2, repeat: Infinity }}
+            className="w-2 h-2 rounded-full bg-premium" />
+          <span className="text-xs font-semibold text-foreground">Cleaner will be assigned shortly</span>
         </motion.div>
-        <motion.h1 initial={{ y: 16, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }}
-          className="text-2xl font-extrabold tracking-tight text-foreground mb-2 text-center">You're all set!</motion.h1>
-        <motion.p initial={{ y: 12, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.3 }}
-          className="text-muted-foreground text-center text-sm mb-8 max-w-[280px] leading-relaxed">
-          We'll text <span className="font-semibold text-foreground">{booking.phone}</span> 30 min before arrival.
-        </motion.p>
+
+        {/* Summary card */}
         <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.4 }}
-          className="w-full max-w-sm rounded-2xl border border-border overflow-hidden">
+          className="rounded-2xl border border-border overflow-hidden">
+
+          {/* Header with total */}
           <div className="bg-foreground text-background px-5 py-4 flex items-center justify-between">
-            <span className="font-bold text-sm">Booking confirmed</span>
-            <span className="font-extrabold text-lg tabular-nums">£{total}</span>
+            <div>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-background/60 block">Booking total</span>
+              <span className="text-2xl font-extrabold tabular-nums">£{total}</span>
+            </div>
+            <div className="w-10 h-10 rounded-xl bg-background/15 flex items-center justify-center">
+              <CheckCircle2 size={20} />
+            </div>
           </div>
-          <div className="p-5 space-y-3 bg-card">
+
+          {/* Service + Car */}
+          <div className="p-4 flex items-center gap-3.5 bg-card border-b border-border">
+            <div className={cn("w-11 h-11 rounded-xl flex items-center justify-center shrink-0", svc?.color)}>
+              {svc && <svc.icon size={20} />}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-bold text-sm text-foreground">{svc?.title}</p>
+              <p className="text-xs text-muted-foreground">{carType?.label} vehicle · {svc?.duration}</p>
+            </div>
+            <span className="font-extrabold tabular-nums text-foreground">£{servicePrice}</span>
+          </div>
+
+          {/* Details grid */}
+          <div className="p-4 space-y-3 bg-card">
             {[
-              { l: "Service", v: `${svc?.title} · ${carType?.label}` },
-              { l: "Date", v: booking.date ? format(booking.date, "EEE, d MMM") : "" },
-              { l: "Time", v: WINDOWS.find((w) => w.id === booking.window)?.time },
-              { l: "Location", v: booking.postcode },
-            ].map(({ l, v }) => (
-              <div key={l} className="flex justify-between items-center text-sm">
-                <span className="text-muted-foreground">{l}</span>
-                <span className="font-semibold text-foreground">{v}</span>
-              </div>
+              { icon: CalendarIcon, label: "Date", value: booking.date ? format(booking.date, "EEEE, d MMMM yyyy") : "" },
+              { icon: Clock, label: "Time", value: WINDOWS.find((w) => w.id === booking.window)?.time },
+              { icon: MapPin, label: "Location", value: `${booking.address}, ${booking.postcode}` },
+              { icon: User, label: "Contact", value: `${booking.name} · ${booking.phone}` },
+            ].map(({ icon: Ic, label, value }, i) => (
+              <motion.div key={label} initial={{ x: -8, opacity: 0 }} animate={{ x: 0, opacity: 1 }}
+                transition={{ delay: 0.5 + i * 0.05 }} className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                  <Ic size={14} className="text-muted-foreground" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{label}</p>
+                  <p className="text-sm font-medium text-foreground truncate">{value}</p>
+                </div>
+              </motion.div>
             ))}
+
+            {/* Add-ons */}
+            {selectedAddons.length > 0 && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.7 }}
+                className="pt-3 mt-1 border-t border-border space-y-2">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Add-ons</p>
+                {selectedAddons.map((a) => (
+                  <div key={a.id} className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground flex items-center gap-2"><a.icon size={12} /> {a.title}</span>
+                    <span className="font-semibold text-foreground tabular-nums">+£{a.price}</span>
+                  </div>
+                ))}
+              </motion.div>
+            )}
+          </div>
+
+          {/* Price breakdown footer */}
+          <div className="bg-muted/50 px-4 py-3 border-t border-border space-y-1.5">
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span>Service ({carType?.label})</span>
+              <span className="tabular-nums">£{servicePrice}</span>
+            </div>
+            {addonsTotal > 0 && (
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>Add-ons ({selectedAddons.length})</span>
+                <span className="tabular-nums">£{addonsTotal}</span>
+              </div>
+            )}
+            <div className="flex justify-between text-sm font-bold text-foreground pt-1.5 border-t border-border">
+              <span>Total</span>
+              <span className="tabular-nums">£{total}</span>
+            </div>
           </div>
         </motion.div>
-        <motion.button initial={{ y: 12, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.6 }}
-          whileTap={{ scale: 0.97 }} onClick={reset}
-          className="mt-6 w-full max-w-sm bg-foreground text-background font-bold text-[15px] py-4 rounded-2xl">
-          Book Another Wash
+
+        {/* Trust row */}
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.8 }}
+          className="flex items-center gap-2 justify-center text-xs text-muted-foreground mt-4">
+          <Shield size={13} className="text-success" />
+          <span>Fully insured · Free cancellation · Secure booking</span>
+        </motion.div>
+
+        {/* Actions */}
+        <motion.div initial={{ y: 12, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.85 }}
+          className="mt-6 space-y-3">
+          <motion.button whileTap={{ scale: 0.97 }} onClick={reset}
+            className="w-full bg-foreground text-background font-bold text-[15px] py-4 rounded-xl flex items-center justify-center gap-2">
+            Book Another Wash <ChevronRight size={16} />
+          </motion.button>
+        </motion.div>
+      </div>
+    );
+  }
         </motion.button>
       </div>
     );
