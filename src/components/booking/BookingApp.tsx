@@ -1152,12 +1152,21 @@ const LiveTracking = ({ booking, svc, carType, total, baseTotal, discountPct, ac
   const [eta, setEta] = useState(18);
   const selectedAddons = ADDONS.filter((a) => booking.addons.includes(a.id));
 
-  // Simulate stage progression
+  // Simulate stage progression with notifications
   useEffect(() => {
     const timers = [
-      setTimeout(() => setStageIdx(1), 3000),
-      setTimeout(() => setStageIdx(2), 7000),
-      setTimeout(() => setStageIdx(3), 15000),
+      setTimeout(() => {
+        setStageIdx(1);
+        pushNotification({ title: "Cleaner assigned", body: "James M. has been assigned to your wash and is getting ready.", icon: "assigned" });
+      }, 3000),
+      setTimeout(() => {
+        setStageIdx(2);
+        pushNotification({ title: "On the way!", body: "James is heading to your location. Estimated arrival: 18 min.", icon: "onway" });
+      }, 7000),
+      setTimeout(() => {
+        setStageIdx(3);
+        pushNotification({ title: "Cleaner arrived", body: "James has arrived at your location. Your wash is starting now!", icon: "arrived" });
+      }, 15000),
     ];
     return () => timers.forEach(clearTimeout);
   }, []);
