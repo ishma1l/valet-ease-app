@@ -493,29 +493,27 @@ const BookingApp = () => {
                 })}
               </div>
 
-              {/* ── Subscription Plans ── */}
+              {/* ── Subscription Frequency (only when subscribed) ── */}
               <AnimatePresence>
-                {booking.service && (
+                {booking.service && booking.plan !== "once" && (
                   <motion.div
                     initial={{ height: 0, opacity: 0 }}
                     animate={{ height: "auto", opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}
                     transition={{ duration: 0.3, ease: "easeOut" }}
-                    className="overflow-hidden mt-6">
+                    className="overflow-hidden mt-5">
                     <div className="flex items-center justify-between mb-3">
                       <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
-                        <Repeat size={11} /> How often?
+                        <Repeat size={11} /> Frequency
                       </p>
-                      {discountPct > 0 && (
-                        <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 500, damping: 25 }}
-                          className="text-[10px] font-bold bg-emerald-500 text-white px-2 py-0.5 rounded-full flex items-center gap-1">
-                          <TrendingDown size={9} /> Save {discountPct}%
-                        </motion.span>
-                      )}
+                      <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 500, damping: 25 }}
+                        className="text-[10px] font-bold bg-emerald-500 text-white px-2 py-0.5 rounded-full flex items-center gap-1">
+                        <TrendingDown size={9} /> Save {discountPct}%
+                      </motion.span>
                     </div>
 
                     <div className="flex gap-2">
-                      {PLANS.map((p, i) => {
+                      {PLANS.filter(p => p.id !== "once").map((p, i) => {
                         const isSelected = booking.plan === p.id;
                         const PIcon = p.icon;
                         const perWashPrice = svc ? Math.round(svc.price * (1 - p.discount / 100)) : 0;
@@ -524,7 +522,7 @@ const BookingApp = () => {
                             transition={{ delay: 0.05 + i * 0.04, ...spring }} whileTap={{ scale: 0.95 }}
                             onClick={() => setBooking((b) => ({ ...b, plan: p.id }))}
                             className={cn(
-                              "flex-1 rounded-2xl p-3 text-center transition-all duration-200 relative active:scale-[0.95]",
+                              "flex-1 rounded-2xl p-4 text-center transition-all duration-200 relative active:scale-[0.95]",
                               isSelected
                                 ? p.id === "weekly"
                                   ? "ring-2 ring-emerald-500 bg-emerald-50 shadow-[0_0_0_3px_rgba(16,185,129,0.1)]"
@@ -538,30 +536,27 @@ const BookingApp = () => {
                               )}>{p.tag}</span>
                             )}
                             <div className={cn(
-                              "w-9 h-9 rounded-xl flex items-center justify-center mx-auto mb-2 transition-colors",
+                              "w-10 h-10 rounded-xl flex items-center justify-center mx-auto mb-2 transition-colors",
                               isSelected
                                 ? p.id === "weekly" ? "bg-emerald-500 text-white" : "bg-foreground text-background"
                                 : "bg-muted text-muted-foreground"
                             )}>
-                              <PIcon size={16} />
+                              <PIcon size={18} />
                             </div>
                             <span className={cn(
                               "font-bold text-sm block",
                               isSelected && p.id === "weekly" ? "text-emerald-700" : "text-foreground"
                             )}>{p.label}</span>
                             <span className="text-[10px] text-muted-foreground block mt-0.5">{p.desc}</span>
-                            {p.discount > 0 && svc && (
-                              <div className="mt-1.5">
+                            {svc && (
+                              <div className="mt-2">
                                 <span className="text-[10px] text-muted-foreground line-through tabular-nums">£{svc.price}</span>
                                 <span className={cn(
-                                  "text-sm font-extrabold tabular-nums ml-1",
+                                  "text-lg font-extrabold tabular-nums ml-1",
                                   isSelected && p.id === "weekly" ? "text-emerald-600" : "text-foreground"
                                 )}>£{perWashPrice}</span>
                                 <span className="text-[9px] text-muted-foreground">/wash</span>
                               </div>
-                            )}
-                            {p.discount === 0 && svc && (
-                              <span className="text-sm font-extrabold tabular-nums text-foreground mt-1.5 block">£{svc.price}</span>
                             )}
                           </motion.button>
                         );
