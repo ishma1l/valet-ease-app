@@ -136,11 +136,36 @@ const BusinessDashboard = () => {
       primary_color: brandColor,
       tagline: brandTagline,
       phone: brandPhone,
+      logo_url: brandLogoUrl,
     }).eq("id", business.id);
     setBrandSaving(false);
     if (error) { toast.error(error.message); return; }
-    setBusiness((b: any) => ({ ...b, name: brandName, primary_color: brandColor, tagline: brandTagline, phone: brandPhone }));
+    setBusiness((b: any) => ({ ...b, name: brandName, primary_color: brandColor, tagline: brandTagline, phone: brandPhone, logo_url: brandLogoUrl }));
     toast.success("Branding saved!");
+  };
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) { toast.error("Please upload an image"); return; }
+    if (file.size > 2 * 1024 * 1024) { toast.error("Max 2MB"); return; }
+
+    setLogoUploading(true);
+    const ext = file.name.split(".").pop();
+    const path = `${business.id}/logo.${ext}`;
+
+    const { error } = await supabase.storage.from("business-logos").upload(path, file, { upsert: true });
+    if (error) { toast.error("Upload failed"); setLogoUploading(false); return; }
+
+    const { data: urlData } = supabase.storage.from("business-logos").getPublicUrl(path);
+    setBrandLogoUrl(urlData.publicUrl + "?t=" + Date.now());
+    setLogoUploading(false);
+    toast.success("Logo uploaded — save branding to apply");
+  };
+
+  const removeLogo = () => {
+    setBrandLogoUrl(null);
+    toast.info("Logo removed — save branding to apply");
   };
 
   const addService = async () => {
