@@ -6,7 +6,7 @@ import { format, addDays, isSameDay } from "date-fns";
 import { cn } from "@/lib/utils";
 import {
   MapPin, Clock, CheckCircle2, ChevronRight, ArrowLeft,
-  CalendarIcon, User, Phone, Sparkles, Package,
+  CalendarIcon, User, Phone, Sparkles, Package, Repeat, Crown, Zap, TrendingDown,
   Shield, ShieldCheck, Check, Plus,
   Droplets, Car, LocateFixed, Navigation,
   Wind, Paintbrush, SprayCan, Armchair, Home,
