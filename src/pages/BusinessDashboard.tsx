@@ -92,6 +92,7 @@ const BusinessDashboard = () => {
     setBrandColor(biz.primary_color);
     setBrandTagline(biz.tagline || "");
     setBrandPhone(biz.phone || "");
+    setBrandLogoUrl(biz.logo_url || null);
 
     const [{ data: bookingsData }, { data: servicesData }] = await Promise.all([
       supabase.from("bookings").select("*").eq("business_id", biz.id).order("created_at", { ascending: false }),
