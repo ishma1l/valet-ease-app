@@ -8,6 +8,9 @@ import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import AdminDashboard from "./pages/AdminDashboard.tsx";
 import WorkerDashboard from "./pages/WorkerDashboard.tsx";
+import Auth from "./pages/Auth.tsx";
+import BusinessDashboard from "./pages/BusinessDashboard.tsx";
+import WhiteLabelBooking from "./pages/WhiteLabelBooking.tsx";
 
 const queryClient = new QueryClient();
 
@@ -20,8 +23,11 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
+          <Route path="/auth" element={<Auth />} />
+          <Route path="/dashboard" element={<BusinessDashboard />} />
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/worker" element={<WorkerDashboard />} />
+          <Route path="/b/:slug" element={<WhiteLabelBooking />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
