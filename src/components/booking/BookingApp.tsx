@@ -323,9 +323,12 @@ const BookingApp = () => {
             ) : null}
             <span className="text-lg font-extrabold tracking-tight">Valet Ease</span>
           </div>
-          <span className="text-xs text-muted-foreground font-medium tabular-nums">
-            {step + 1} of {TOTAL_STEPS}
-          </span>
+          <div className="flex items-center gap-1">
+            <NotificationBell />
+            <span className="text-xs text-muted-foreground font-medium tabular-nums">
+              {step + 1} of {TOTAL_STEPS}
+            </span>
+          </div>
         </div>
         <div className="max-w-lg mx-auto px-5 pb-0.5 flex gap-1">
           {Array.from({ length: TOTAL_STEPS }, (_, i) => (
