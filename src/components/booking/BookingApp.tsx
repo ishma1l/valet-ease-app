@@ -290,26 +290,65 @@ const BookingApp = () => {
               <div className="grid grid-cols-2 gap-3 mt-5">
                 {CAR_TYPES.map((c, i) => {
                   const selected = booking.carType === c.id;
-                  const Icon = c.icon;
+                  const svcPrice = svc?.price || 0;
+                  const adjustedPrice = Math.round(svcPrice * c.multiplier);
                   return (
-                    <motion.button key={c.id} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: 0.06 + i * 0.05, ...ease }} whileTap={{ scale: 0.97 }}
+                    <motion.button key={c.id} initial={{ opacity: 0, y: 16, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }}
+                      transition={{ delay: 0.06 + i * 0.06, ...ease }}
+                      whileTap={{ scale: 0.95 }}
                       onClick={() => setBooking({ ...booking, carType: c.id })}
                       className={cn(
-                        "rounded-2xl p-4 text-left transition-all duration-200 flex flex-col items-center text-center",
-                        selected ? "ring-2 ring-foreground bg-card shadow-[var(--shadow-glow)]" : "ring-1 ring-border bg-card"
+                        "relative rounded-2xl text-center transition-all duration-300 overflow-hidden flex flex-col",
+                        selected
+                          ? "ring-2 ring-foreground bg-card shadow-[var(--shadow-glow)]"
+                          : "ring-1 ring-border bg-card hover:shadow-[var(--shadow-elevated)]"
                       )}>
-                      <div className={cn(
-                        "w-14 h-14 rounded-xl flex items-center justify-center mb-3 transition-colors",
-                        selected ? "bg-foreground text-background" : "bg-muted text-muted-foreground"
-                      )}>
-                        <Icon size={24} />
-                      </div>
-                      <span className="font-bold text-sm text-foreground">{c.label}</span>
-                      <span className="text-[11px] text-muted-foreground mt-0.5">{c.example}</span>
-                      {c.multiplier > 1 && (
-                        <span className="text-[10px] font-semibold text-premium mt-1.5">+{Math.round((c.multiplier - 1) * 100)}%</span>
+
+                      {/* Tag */}
+                      {c.tag && (
+                        <div className="absolute top-2 right-2 z-10">
+                          <span className="text-[8px] font-bold uppercase tracking-wider bg-foreground text-background px-2 py-0.5 rounded-full">
+                            {c.tag}
+                          </span>
+                        </div>
                       )}
+
+                      {/* Car image */}
+                      <div className={cn(
+                        "relative h-24 flex items-end justify-center pt-3 px-2 transition-colors duration-300",
+                        selected ? "bg-muted/80" : "bg-muted/40"
+                      )}>
+                        <motion.img
+                          src={c.img}
+                          alt={c.label}
+                          loading="lazy"
+                          width={140}
+                          height={90}
+                          className="object-contain max-h-[80px] relative z-10"
+                          animate={selected ? { scale: 1.08, y: -2 } : { scale: 1, y: 0 }}
+                          transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                        />
+                      </div>
+
+                      {/* Info */}
+                      <div className="p-3 flex flex-col items-center gap-0.5">
+                        <span className="font-bold text-sm text-foreground">{c.label}</span>
+                        <span className="text-[10px] text-muted-foreground leading-tight">{c.example}</span>
+                        <span className="text-base font-extrabold tabular-nums text-foreground mt-1.5">£{adjustedPrice}</span>
+                        {c.multiplier > 1 && (
+                          <span className="text-[9px] font-semibold text-premium">+{Math.round((c.multiplier - 1) * 100)}% surcharge</span>
+                        )}
+                      </div>
+
+                      {/* Selection indicator */}
+                      <motion.div
+                        className="absolute bottom-2 right-2"
+                        animate={selected ? { scale: 1 } : { scale: 0 }}
+                        transition={{ type: "spring", stiffness: 500, damping: 25 }}>
+                        <div className="w-5 h-5 rounded-full bg-foreground text-background flex items-center justify-center">
+                          <Check size={11} strokeWidth={3} />
+                        </div>
+                      </motion.div>
                     </motion.button>
                   );
                 })}
