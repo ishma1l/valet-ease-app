@@ -51,6 +51,11 @@ const BusinessDashboard = () => {
   const [brandTagline, setBrandTagline] = useState("");
   const [brandPhone, setBrandPhone] = useState("");
   const [brandSaving, setBrandSaving] = useState(false);
+  const [brandLogoUrl, setBrandLogoUrl] = useState<string | null>(null);
+  const [logoUploading, setLogoUploading] = useState(false);
+  const logoInputRef = useRef<HTMLInputElement>(null);
+
+  const COLOR_PRESETS = ["#1a1b2e", "#0f766e", "#1d4ed8", "#9333ea", "#dc2626", "#ca8a04", "#16a34a", "#0891b2"];
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
