@@ -38,10 +38,10 @@ const SERVICES = [
 ];
 
 const CAR_TYPES = [
-  { id: "small", label: "Small", example: "Corsa, Polo, Yaris", icon: Car, multiplier: 1 },
-  { id: "medium", label: "Medium", example: "Golf, Focus, A3", icon: Car, multiplier: 1 },
-  { id: "large", label: "Large", example: "X5, Q7, Range Rover", icon: Truck, multiplier: 1.3 },
-  { id: "van", label: "Van", example: "Transit, Sprinter", icon: Truck, multiplier: 1.5 },
+  { id: "small", label: "Small", example: "Corsa, Polo, Yaris", img: carSmall, multiplier: 1 },
+  { id: "sedan", label: "Sedan", example: "Golf, Focus, A3", img: carSedan, multiplier: 1, tag: "Most Popular" },
+  { id: "suv", label: "SUV", example: "X5, Q7, Range Rover", img: carSuv, multiplier: 1.3 },
+  { id: "van", label: "Van", example: "Transit, Sprinter", img: carVan, multiplier: 1.5 },
 ];
 
 const ADDONS = [
