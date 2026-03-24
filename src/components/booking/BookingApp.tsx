@@ -1392,4 +1392,67 @@ const LiveTracking = ({ booking, svc, carType, total, baseTotal, discountPct, ac
   );
 };
 
+/* ─── Customer-facing photo comparison (polls for photos) ─── */
+const JobPhotosCustomerView = ({ bookingId }: { bookingId?: string }) => {
+  const [beforeUrl, setBeforeUrl] = useState<string | null>(null);
+  const [afterUrl, setAfterUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    // In a real app this would use the actual booking ID
+    // For the demo, poll latest photos from any booking
+    const fetchPhotos = async () => {
+      const { data } = await supabase
+        .from("job_photos")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(10);
+
+      if (!data || data.length === 0) return;
+
+      // Group by booking and find one with both
+      const byBooking: Record<string, any[]> = {};
+      data.forEach((p: any) => {
+        if (!byBooking[p.booking_id]) byBooking[p.booking_id] = [];
+        byBooking[p.booking_id].push(p);
+      });
+
+      for (const photos of Object.values(byBooking)) {
+        const before = photos.find((p: any) => p.photo_type === "before");
+        const after = photos.find((p: any) => p.photo_type === "after");
+        if (before && after) {
+          const { data: bUrl } = supabase.storage.from("job-photos").getPublicUrl(before.storage_path);
+          const { data: aUrl } = supabase.storage.from("job-photos").getPublicUrl(after.storage_path);
+          setBeforeUrl(bUrl.publicUrl);
+          setAfterUrl(aUrl.publicUrl);
+          return;
+        }
+      }
+    };
+
+    fetchPhotos();
+    const interval = setInterval(fetchPhotos, 5000);
+    return () => clearInterval(interval);
+  }, [bookingId]);
+
+  if (!beforeUrl || !afterUrl) return null;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="rounded-2xl ring-1 ring-border bg-card overflow-hidden mb-5"
+    >
+      <div className="p-4 pb-2">
+        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3">
+          Before & After
+        </p>
+        <BeforeAfterComparison beforeUrl={beforeUrl} afterUrl={afterUrl} />
+        <p className="text-[10px] text-center text-muted-foreground font-medium mt-2">
+          Drag to compare
+        </p>
+      </div>
+    </motion.div>
+  );
+};
+
 export default BookingApp;
