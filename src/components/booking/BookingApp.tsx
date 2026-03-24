@@ -1113,4 +1113,279 @@ const InputField = ({ icon: Icon, label, placeholder, value, onChange, type = "t
   </div>
 );
 
+/* ─── Live Tracking Component ─── */
+
+const TRACKING_STAGES = [
+  { id: "confirmed", label: "Booking confirmed", desc: "Your booking has been received", icon: CheckCircle2, eta: null },
+  { id: "assigned", label: "Cleaner assigned", desc: "James M. is preparing for your wash", icon: User, eta: null },
+  { id: "onway", label: "On the way", desc: "James is heading to your location", icon: Navigation, eta: "12 min away" },
+  { id: "arrived", label: "Arrived", desc: "James has arrived — wash starting now", icon: MapPin, eta: null },
+];
+
+interface LiveTrackingProps {
+  booking: BookingState;
+  svc: typeof SERVICES[number] | undefined;
+  carType: typeof CAR_TYPES[number] | undefined;
+  total: number;
+  baseTotal: number;
+  discountPct: number;
+  discountAmount: number;
+  activePlan: typeof PLANS[number];
+  servicePrice: number;
+  addonsTotal: number;
+  onReset: () => void;
+}
+
+const LiveTracking = ({ booking, svc, carType, total, baseTotal, discountPct, activePlan, servicePrice, addonsTotal, onReset }: LiveTrackingProps) => {
+  const [stageIdx, setStageIdx] = useState(0);
+  const [eta, setEta] = useState(18);
+  const selectedAddons = ADDONS.filter((a) => booking.addons.includes(a.id));
+
+  // Simulate stage progression
+  useEffect(() => {
+    const timers = [
+      setTimeout(() => setStageIdx(1), 3000),
+      setTimeout(() => setStageIdx(2), 7000),
+      setTimeout(() => setStageIdx(3), 15000),
+    ];
+    return () => timers.forEach(clearTimeout);
+  }, []);
+
+  // Simulate ETA countdown when on the way
+  useEffect(() => {
+    if (stageIdx < 2) return;
+    if (stageIdx >= 3) { setEta(0); return; }
+    const interval = setInterval(() => {
+      setEta((e) => Math.max(0, e - 1));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [stageIdx]);
+
+  const currentStage = TRACKING_STAGES[stageIdx];
+  const CurIcon = currentStage.icon;
+
+  return (
+    <div className="min-h-svh bg-background flex flex-col max-w-lg mx-auto w-full">
+
+      {/* ─── Map Area ─── */}
+      <div className="relative h-[240px] bg-muted overflow-hidden shrink-0">
+        <div className="absolute inset-0 opacity-[0.06]"
+          style={{ backgroundImage: `linear-gradient(hsl(var(--foreground)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--foreground)) 1px, transparent 1px)`, backgroundSize: "32px 32px" }} />
+
+        {/* Animated rings */}
+        <motion.div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+          animate={{ scale: [1, 2.5, 1], opacity: [0.12, 0, 0.12] }}
+          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}>
+          <div className="w-24 h-24 rounded-full bg-foreground/10" />
+        </motion.div>
+        <motion.div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+          animate={{ scale: [1, 1.8, 1], opacity: [0.1, 0, 0.1] }}
+          transition={{ duration: 3, repeat: Infinity, ease: "easeInOut", delay: 0.4 }}>
+          <div className="w-16 h-16 rounded-full bg-foreground/10" />
+        </motion.div>
+
+        {/* Destination pin */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center">
+          <div className="w-10 h-10 rounded-full bg-foreground text-background flex items-center justify-center shadow-lg z-10">
+            <MapPin size={18} />
+          </div>
+          <div className="w-2 h-2 rounded-full bg-foreground/30 mt-1" />
+        </div>
+
+        {/* Cleaner dot (animates toward center when on the way) */}
+        {stageIdx >= 2 && (
+          <motion.div
+            initial={{ x: -120, y: -80 }}
+            animate={stageIdx >= 3 ? { x: 0, y: 0 } : { x: [-120, -60, -30], y: [-80, -40, -15] }}
+            transition={stageIdx >= 3 ? { duration: 1 } : { duration: 8, ease: "easeInOut" }}
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20">
+            <motion.div animate={{ scale: [1, 1.15, 1] }} transition={{ duration: 1.5, repeat: Infinity }}
+              className="w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center shadow-lg border-2 border-white">
+              <Car size={14} />
+            </motion.div>
+          </motion.div>
+        )}
+
+        {/* ETA overlay */}
+        {stageIdx === 2 && eta > 0 && (
+          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+            className="absolute top-4 left-1/2 -translate-x-1/2 bg-foreground text-background rounded-2xl px-4 py-2.5 flex items-center gap-2.5 shadow-lg">
+            <Clock size={14} />
+            <div>
+              <motion.span key={eta} initial={{ y: -4, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
+                className="text-lg font-extrabold tabular-nums block leading-tight">{eta} min</motion.span>
+              <span className="text-[10px] text-background/60 font-medium">Estimated arrival</span>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Arrived badge */}
+        {stageIdx === 3 && (
+          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 300, damping: 20 }}
+            className="absolute top-4 left-1/2 -translate-x-1/2 bg-emerald-500 text-white rounded-2xl px-5 py-2.5 flex items-center gap-2 shadow-lg">
+            <CheckCircle2 size={16} />
+            <span className="font-bold text-sm">Cleaner has arrived!</span>
+          </motion.div>
+        )}
+
+        {/* Address badge */}
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
+          className="absolute bottom-3 left-3 bg-background/90 backdrop-blur-sm rounded-xl px-3 py-1.5 flex items-center gap-1.5 max-w-[200px]">
+          <MapPin size={11} className="text-foreground shrink-0" />
+          <span className="text-[11px] font-bold text-foreground truncate">{booking.address}</span>
+        </motion.div>
+      </div>
+
+      {/* ─── Content ─── */}
+      <div className="flex-1 px-5 pt-5 pb-safe overflow-y-auto">
+
+        {/* Current status header */}
+        <AnimatePresence mode="wait">
+          <motion.div key={stageIdx} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.3 }} className="flex items-center gap-3.5 mb-5">
+            <motion.div
+              animate={stageIdx < 3 ? { scale: [1, 1.1, 1] } : {}}
+              transition={{ duration: 2, repeat: Infinity }}
+              className={cn(
+                "w-12 h-12 rounded-xl flex items-center justify-center shrink-0",
+                stageIdx === 3 ? "bg-emerald-50 text-emerald-500" : "bg-foreground text-background"
+              )}>
+              <CurIcon size={22} />
+            </motion.div>
+            <div className="flex-1">
+              <h2 className="font-bold text-lg text-foreground">{currentStage.label}</h2>
+              <p className="text-sm text-muted-foreground">{currentStage.desc}</p>
+            </div>
+          </motion.div>
+        </AnimatePresence>
+
+        {/* Progress timeline */}
+        <div className="space-y-0 mb-6">
+          {TRACKING_STAGES.map((stage, i) => {
+            const completed = i < stageIdx;
+            const active = i === stageIdx;
+            const upcoming = i > stageIdx;
+            const SIcon = stage.icon;
+            return (
+              <div key={stage.id} className="flex gap-3.5">
+                {/* Vertical line + dot */}
+                <div className="flex flex-col items-center w-8 shrink-0">
+                  <motion.div
+                    animate={active ? { scale: [1, 1.2, 1] } : {}}
+                    transition={{ duration: 1.5, repeat: Infinity }}
+                    className={cn(
+                      "w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-all duration-500",
+                      completed ? "bg-emerald-500 text-white"
+                        : active ? "bg-foreground text-background ring-4 ring-foreground/10"
+                        : "bg-muted text-muted-foreground"
+                    )}>
+                    {completed ? <Check size={14} strokeWidth={3} /> : <SIcon size={14} />}
+                  </motion.div>
+                  {i < TRACKING_STAGES.length - 1 && (
+                    <div className="w-0.5 flex-1 min-h-[32px] relative overflow-hidden bg-border rounded-full my-1">
+                      <motion.div
+                        className="absolute top-0 left-0 w-full bg-emerald-500 rounded-full"
+                        initial={{ height: "0%" }}
+                        animate={{ height: completed ? "100%" : active ? "40%" : "0%" }}
+                        transition={{ duration: 0.8, ease: "easeOut" }}
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Content */}
+                <div className={cn("pb-4 pt-1 flex-1 min-w-0", upcoming && "opacity-40")}>
+                  <div className="flex items-center gap-2">
+                    <span className={cn("font-semibold text-sm", active ? "text-foreground" : completed ? "text-emerald-600" : "text-muted-foreground")}>
+                      {stage.label}
+                    </span>
+                    {completed && (
+                      <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }}
+                        className="text-[8px] font-bold uppercase bg-emerald-50 text-emerald-600 px-1.5 py-0.5 rounded-full">Done</motion.span>
+                    )}
+                    {active && (
+                      <motion.div animate={{ opacity: [1, 0.4, 1] }} transition={{ duration: 1.5, repeat: Infinity }}
+                        className="w-1.5 h-1.5 rounded-full bg-foreground" />
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-0.5">{stage.desc}</p>
+                  {active && stage.id === "onway" && eta > 0 && (
+                    <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                      className="text-xs font-bold text-foreground mt-1 block tabular-nums">
+                      {eta} min away
+                    </motion.span>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Cleaner card (appears when assigned) */}
+        <AnimatePresence>
+          {stageIdx >= 1 && (
+            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+              className="rounded-2xl ring-1 ring-border bg-card p-4 mb-5">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3">Your cleaner</p>
+              <div className="flex items-center gap-3.5">
+                <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center text-foreground font-bold text-lg">
+                  JM
+                </div>
+                <div className="flex-1">
+                  <p className="font-bold text-sm text-foreground">James M.</p>
+                  <div className="flex items-center gap-1 mt-0.5">
+                    <div className="flex">
+                      {[...Array(5)].map((_, i) => (
+                        <span key={i} className="text-amber-400 text-xs">★</span>
+                      ))}
+                    </div>
+                    <span className="text-[11px] text-muted-foreground font-medium">4.9 · 342 washes</span>
+                  </div>
+                </div>
+                <motion.button whileTap={{ scale: 0.92 }}
+                  className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center">
+                  <Phone size={16} className="text-foreground" />
+                </motion.button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Booking summary card */}
+        <div className="rounded-2xl ring-1 ring-border bg-card overflow-hidden mb-5">
+          <div className="p-4 flex items-center gap-3.5 border-b border-border">
+            <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center shrink-0", svc?.color)}>
+              {svc && <svc.icon size={18} />}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-bold text-sm text-foreground">{svc?.title}</p>
+              <p className="text-[11px] text-muted-foreground">{carType?.label} · {svc?.duration}{booking.plan !== "once" ? ` · ${activePlan.label}` : ""}</p>
+            </div>
+            <div className="text-right">
+              {discountPct > 0 && <span className="text-[10px] text-muted-foreground line-through tabular-nums block">£{baseTotal}</span>}
+              <span className={cn("font-extrabold tabular-nums", discountPct > 0 ? "text-emerald-600" : "text-foreground")}>£{total}</span>
+            </div>
+          </div>
+          <div className="px-4 py-3 flex items-center gap-4 text-xs text-muted-foreground">
+            <span className="flex items-center gap-1"><CalendarIcon size={11} /> {booking.date ? format(booking.date, "EEE, d MMM") : ""}</span>
+            <span className="flex items-center gap-1"><Clock size={11} /> {WINDOWS.find((w) => w.id === booking.window)?.time}</span>
+            {selectedAddons.length > 0 && <span className="flex items-center gap-1"><Plus size={11} /> {selectedAddons.length} add-on{selectedAddons.length > 1 ? "s" : ""}</span>}
+          </div>
+        </div>
+
+        {/* Book again button */}
+        <motion.button whileTap={{ scale: 0.97 }} onClick={onReset}
+          className="w-full bg-foreground text-background font-bold text-[15px] h-14 rounded-2xl flex items-center justify-center gap-2 active:scale-[0.97] transition-transform mb-4">
+          Book Another Wash <ChevronRight size={16} />
+        </motion.button>
+
+        <div className="flex items-center gap-2 justify-center text-xs text-muted-foreground mb-6">
+          <Shield size={13} className="text-emerald-500" />
+          <span>Fully insured · Free cancellation</span>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default BookingApp;
