@@ -53,9 +53,9 @@ const ADDONS = [
 ];
 
 const WINDOWS = [
-  { id: "morning", label: "Morning", time: "9 – 12" },
-  { id: "afternoon", label: "Afternoon", time: "12 – 4" },
-  { id: "evening", label: "Evening", time: "4 – 7" },
+  { id: "morning", label: "Morning", time: "9 – 12", icon: Sun, slots: 2, color: "bg-amber-50 text-amber-500" },
+  { id: "afternoon", label: "Afternoon", time: "12 – 4", icon: CloudSun, slots: 4, tag: "Next available", color: "bg-sky-50 text-sky-500" },
+  { id: "evening", label: "Evening", time: "4 – 7", icon: Sunset, slots: 1, color: "bg-violet-50 text-violet-500" },
 ];
 
 const STEP_LABELS = ["Service", "Car Type", "Add-ons", "Schedule", "Location", "Confirm"];
