@@ -1031,17 +1031,17 @@ const BookingApp = () => {
                 {booking.service && total > 0 ? (
                   <div>
                     <div className="flex items-baseline gap-1.5">
+                      {discountPct > 0 && (
+                        <span className="text-sm text-muted-foreground line-through tabular-nums">£{baseTotal}</span>
+                      )}
                       <motion.span key={total} initial={{ y: -6, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
-                        className="text-xl font-extrabold tabular-nums text-foreground leading-tight">£{total}</motion.span>
-                      {addonsTotal > 0 && (
-                        <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                          className="text-[10px] text-muted-foreground font-medium">
-                          incl. {selectedAddons.length} extra{selectedAddons.length > 1 ? "s" : ""}
-                        </motion.span>
+                        className={cn("text-xl font-extrabold tabular-nums leading-tight", discountPct > 0 ? "text-emerald-600" : "text-foreground")}>£{total}</motion.span>
+                      {booking.plan !== "once" && (
+                        <span className="text-[10px] text-muted-foreground font-medium">/wash</span>
                       )}
                     </div>
                     <span className="text-[10px] text-muted-foreground block mt-0.5 truncate">
-                      {[svc?.title, carType?.label].filter(Boolean).join(" · ")}
+                      {[svc?.title, booking.plan !== "once" ? activePlan.label : null, carType?.label].filter(Boolean).join(" · ")}
                     </span>
                   </div>
                 ) : (
