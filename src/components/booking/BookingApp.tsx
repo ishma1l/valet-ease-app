@@ -5,10 +5,10 @@ import { AnimatePresence, motion } from "framer-motion";
 import { format, addDays, isSameDay } from "date-fns";
 import { cn } from "@/lib/utils";
 import {
-  MapPin, Clock, CheckCircle2, ChevronRight, ArrowLeft, Zap,
-  CalendarIcon, User, Phone, Sparkles,
-  Shield, ShieldCheck, Check,
-  Droplets, Car, Truck, LocateFixed, Navigation, Search,
+  MapPin, Clock, CheckCircle2, ChevronRight, ArrowLeft,
+  CalendarIcon, User, Phone, Sparkles, Package,
+  Shield, ShieldCheck, Check, Plus,
+  Droplets, Car, LocateFixed, Navigation,
   Wind, Paintbrush, SprayCan, Armchair, Home,
   Sun, CloudSun, Sunset, AlertCircle,
 } from "lucide-react";
@@ -33,9 +33,9 @@ interface BookingState {
 
 /* ─── Data ─── */
 const SERVICES = [
-  { id: "basic", title: "Basic Wash", desc: "Exterior hand wash, rinse & dry", price: 15, duration: "30 min", icon: Droplets, color: "bg-sky-50 text-sky-600" },
-  { id: "valet", title: "Full Valet", desc: "Complete interior & exterior", price: 25, duration: "60 min", icon: Sparkles, tag: "Popular", color: "bg-amber-50 text-amber-600" },
-  { id: "premium", title: "Premium Detail", desc: "Deep clean, polish & wax", price: 45, duration: "90 min", icon: Car, color: "bg-violet-50 text-violet-600" },
+  { id: "basic", title: "Basic Wash", desc: "Exterior hand wash, rinse & dry", price: 15, duration: "30 min", icon: Droplets, color: "bg-sky-50 text-sky-600", includes: ["Exterior wash", "Rinse & dry", "Window clean"] },
+  { id: "valet", title: "Full Valet", desc: "Complete interior & exterior", price: 25, duration: "60 min", icon: Sparkles, tag: "Popular", color: "bg-amber-50 text-amber-600", includes: ["Everything in Basic", "Interior vacuum", "Dashboard wipe", "Air freshener"] },
+  { id: "premium", title: "Premium Detail", desc: "Deep clean, polish & wax", price: 45, duration: "90 min", icon: Car, color: "bg-violet-50 text-violet-600", includes: ["Everything in Full Valet", "Clay bar treatment", "Hand polish", "Wax protection"] },
 ];
 
 const CAR_TYPES = [
@@ -46,10 +46,10 @@ const CAR_TYPES = [
 ];
 
 const ADDONS = [
-  { id: "airfresh", title: "Air Freshener", desc: "Long-lasting scent", price: 3, icon: Wind },
+  { id: "airfresh", title: "Air Freshener", desc: "Long-lasting premium scent", price: 3, icon: Wind },
   { id: "tyre", title: "Tyre Shine", desc: "Glossy wheel finish", price: 5, icon: SprayCan },
-  { id: "leather", title: "Leather Care", desc: "Condition & protect", price: 8, icon: Armchair },
-  { id: "clay", title: "Clay Bar", desc: "Remove contaminants", price: 12, icon: Paintbrush },
+  { id: "leather", title: "Leather Care", desc: "Condition & protect seats", price: 8, icon: Armchair },
+  { id: "clay", title: "Clay Bar", desc: "Remove surface contaminants", price: 12, icon: Paintbrush },
 ];
 
 const WINDOWS = [
@@ -58,7 +58,8 @@ const WINDOWS = [
   { id: "evening", label: "Evening", time: "4 – 7", icon: Sunset, slots: 1, color: "bg-violet-50 text-violet-500" },
 ];
 
-const STEP_LABELS = ["Service", "Vehicle", "Extras", "Date", "Time", "Location", "Review"];
+// Merged service+addons into step 0, removed separate extras step
+const STEP_LABELS = ["Package", "Vehicle", "Date", "Time", "Location", "Review"];
 const TOTAL_STEPS = STEP_LABELS.length;
 
 /* ─── Animation ─── */
@@ -144,11 +145,10 @@ const BookingApp = () => {
   const canContinue = () => {
     if (step === 0) return !!booking.service;
     if (step === 1) return !!booking.carType;
-    if (step === 2) return true;
-    if (step === 3) return !!booking.date;
-    if (step === 4) return !!booking.window;
-    if (step === 5) return !!(booking.name && booking.phone && booking.address && booking.postcode);
-    if (step === 6) return true;
+    if (step === 2) return !!booking.date;
+    if (step === 3) return !!booking.window;
+    if (step === 4) return !!(booking.name && booking.phone && booking.address && booking.postcode);
+    if (step === 5) return true;
     return true;
   };
 
@@ -286,6 +286,9 @@ const BookingApp = () => {
   }
 
   /* ═══════════ MAIN ═══════════ */
+  const selectedAddons = ADDONS.filter((a) => booking.addons.includes(a.id));
+  const packageItemCount = (booking.service ? 1 : 0) + selectedAddons.length;
+
   return (
     <div className="min-h-svh bg-background text-foreground font-sans flex flex-col">
 
@@ -305,7 +308,6 @@ const BookingApp = () => {
             {step + 1} of {TOTAL_STEPS}
           </span>
         </div>
-        {/* Progress bar */}
         <div className="max-w-lg mx-auto px-5 pb-0.5 flex gap-1">
           {Array.from({ length: TOTAL_STEPS }, (_, i) => (
             <div key={i} className="h-[3px] flex-1 rounded-full overflow-hidden bg-border">
@@ -321,31 +323,37 @@ const BookingApp = () => {
       <div ref={scrollRef} className="flex-1 flex flex-col overflow-y-auto overflow-x-hidden scroll-smooth">
         <AnimatePresence mode="wait" custom={dir}>
 
-          {/* ══════ STEP 0: Service ══════ */}
+          {/* ══════ STEP 0: Package Builder ══════ */}
           {step === 0 && (
             <motion.div key="s0" custom={dir} variants={slideVariants} initial="enter" animate="center" exit="exit" transition={spring}
-              className="flex-1 max-w-lg mx-auto w-full px-5 pt-6 pb-32">
+              className="flex-1 max-w-lg mx-auto w-full px-5 pt-5 pb-32">
 
               <motion.div initial={{ y: 14, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.05 }}
-                className="flex justify-center mb-2">
-                <img src={carIllustration} alt="Premium car detailing" width={240} height={150} className="object-contain" />
+                className="flex justify-center mb-1">
+                <img src={carIllustration} alt="Premium car detailing" width={200} height={128} className="object-contain" />
               </motion.div>
 
-              <StepHeader title="What does your car need?" sub="Tap to select a package" />
+              <StepHeader title="Build your package" sub="Choose a base wash, then add extras" />
 
-              <div className="space-y-3 mt-5">
+              {/* ── Base packages ── */}
+              <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }}
+                className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mt-5 mb-3 flex items-center gap-1.5">
+                <Package size={11} /> Choose your base
+              </motion.p>
+
+              <div className="space-y-2.5">
                 {SERVICES.map((s, i) => {
                   const selected = booking.service === s.id;
                   const Icon = s.icon;
                   return (
                     <motion.button key={s.id} initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.08 + i * 0.06, ...spring }} whileTap={{ scale: 0.97 }}
-                      onClick={() => selectAndAdvance((b) => ({ ...b, service: s.id }))}
+                      transition={{ delay: 0.08 + i * 0.05, ...spring }} whileTap={{ scale: 0.97 }}
+                      onClick={() => setBooking((b) => ({ ...b, service: s.id }))}
                       className={cn(
-                        "w-full rounded-2xl text-left p-4 transition-all duration-200 active:scale-[0.97]",
+                        "w-full rounded-2xl text-left transition-all duration-200 active:scale-[0.97] overflow-hidden",
                         selected ? "ring-2 ring-foreground bg-card shadow-[var(--shadow-glow)]" : "ring-1 ring-border bg-card"
                       )}>
-                      <div className="flex items-center gap-3.5">
+                      <div className="p-4 flex items-center gap-3.5">
                         <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center shrink-0", s.color)}>
                           <Icon size={22} />
                         </div>
@@ -357,19 +365,164 @@ const BookingApp = () => {
                             )}
                           </div>
                           <p className="text-muted-foreground text-xs mt-0.5">{s.desc}</p>
-                          <span className="text-[11px] text-muted-foreground flex items-center gap-1 mt-1">
-                            <Clock size={10} /> {s.duration}
-                          </span>
                         </div>
-                        <div className="flex flex-col items-end gap-2 shrink-0">
+                        <div className="flex flex-col items-end gap-1.5 shrink-0">
                           <span className="text-lg font-extrabold tabular-nums text-foreground">£{s.price}</span>
                           <RadioDot selected={selected} />
                         </div>
                       </div>
+
+                      {/* Expanded includes list */}
+                      <AnimatePresence>
+                        {selected && (
+                          <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: "auto", opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            transition={{ duration: 0.25, ease: "easeOut" }}
+                            className="overflow-hidden">
+                            <div className="px-4 pb-4 pt-1 border-t border-border/50">
+                              <div className="flex items-center gap-1.5 mb-2">
+                                <Clock size={10} className="text-muted-foreground" />
+                                <span className="text-[11px] text-muted-foreground font-medium">{s.duration}</span>
+                              </div>
+                              <div className="flex flex-wrap gap-1.5">
+                                {s.includes.map((item) => (
+                                  <span key={item} className="text-[10px] font-medium bg-muted text-muted-foreground px-2 py-1 rounded-lg flex items-center gap-1">
+                                    <Check size={9} strokeWidth={3} className="text-emerald-500" /> {item}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </motion.button>
                   );
                 })}
               </div>
+
+              {/* ── Add-ons section ── */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: booking.service ? 1 : 0.4 }}
+                transition={{ delay: 0.3 }}
+                className="mt-6">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
+                    <Plus size={11} /> Boost your package
+                  </p>
+                  {selectedAddons.length > 0 && (
+                    <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 500, damping: 25 }}
+                      className="text-[10px] font-bold bg-foreground text-background px-2 py-0.5 rounded-full tabular-nums">
+                      +£{addonsTotal}
+                    </motion.span>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-2 gap-2.5">
+                  {ADDONS.map((a, i) => {
+                    const selected = booking.addons.includes(a.id);
+                    const Icon = a.icon;
+                    return (
+                      <motion.button key={a.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.32 + i * 0.04, ...spring }} whileTap={{ scale: 0.95 }}
+                        disabled={!booking.service}
+                        onClick={() => toggleAddon(a.id)}
+                        className={cn(
+                          "rounded-2xl p-3.5 text-left transition-all duration-200 relative active:scale-[0.95] disabled:opacity-40",
+                          selected ? "ring-2 ring-foreground bg-card shadow-[var(--shadow-glow)]" : "ring-1 ring-border bg-card"
+                        )}>
+                        <div className="flex items-start gap-3">
+                          <div className={cn(
+                            "w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-colors",
+                            selected ? "bg-foreground text-background" : "bg-muted text-muted-foreground"
+                          )}>
+                            <Icon size={18} />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <span className="font-bold text-sm text-foreground block leading-tight">{a.title}</span>
+                            <span className="text-[11px] text-muted-foreground leading-tight">{a.desc}</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between mt-2.5 pt-2 border-t border-border/50">
+                          <span className={cn(
+                            "font-extrabold text-sm tabular-nums transition-colors",
+                            selected ? "text-foreground" : "text-muted-foreground"
+                          )}>+£{a.price}</span>
+                          <div className={cn(
+                            "w-5 h-5 rounded-md flex items-center justify-center transition-all",
+                            selected ? "bg-foreground text-background" : "border-2 border-border"
+                          )}>
+                            {selected && (
+                              <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 500, damping: 20 }}>
+                                <Check size={11} strokeWidth={3} />
+                              </motion.div>
+                            )}
+                          </div>
+                        </div>
+                      </motion.button>
+                    );
+                  })}
+                </div>
+              </motion.div>
+
+              {/* ── Live package summary ── */}
+              <AnimatePresence>
+                {booking.service && (
+                  <motion.div
+                    initial={{ height: 0, opacity: 0, marginTop: 0 }}
+                    animate={{ height: "auto", opacity: 1, marginTop: 20 }}
+                    exit={{ height: 0, opacity: 0, marginTop: 0 }}
+                    transition={{ duration: 0.3, ease: "easeOut" }}
+                    className="overflow-hidden">
+                    <div className="rounded-2xl bg-muted/60 p-4">
+                      <div className="flex items-center gap-2 mb-3">
+                        <Package size={14} className="text-foreground" />
+                        <span className="text-xs font-bold text-foreground uppercase tracking-wider">Your package</span>
+                        <span className="text-[10px] font-semibold text-muted-foreground ml-auto">{packageItemCount} item{packageItemCount !== 1 ? "s" : ""}</span>
+                      </div>
+
+                      <div className="space-y-1.5">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-foreground font-medium flex items-center gap-2">
+                            {svc && <svc.icon size={13} className="text-muted-foreground" />}
+                            {svc?.title}
+                          </span>
+                          <span className="font-semibold text-foreground tabular-nums">£{svc?.price}</span>
+                        </div>
+
+                        <AnimatePresence>
+                          {selectedAddons.map((a) => (
+                            <motion.div
+                              key={a.id}
+                              initial={{ height: 0, opacity: 0 }}
+                              animate={{ height: "auto", opacity: 1 }}
+                              exit={{ height: 0, opacity: 0 }}
+                              transition={{ duration: 0.2 }}
+                              className="overflow-hidden">
+                              <div className="flex items-center justify-between text-sm py-0.5">
+                                <span className="text-muted-foreground flex items-center gap-2">
+                                  <a.icon size={13} /> {a.title}
+                                </span>
+                                <span className="font-medium text-foreground tabular-nums">+£{a.price}</span>
+                              </div>
+                            </motion.div>
+                          ))}
+                        </AnimatePresence>
+                      </div>
+
+                      <div className="flex items-center justify-between mt-3 pt-3 border-t border-border/60">
+                        <span className="font-bold text-sm text-foreground">Package total</span>
+                        <motion.span key={total} initial={{ scale: 1.15 }} animate={{ scale: 1 }}
+                          className="font-extrabold text-xl tabular-nums text-foreground">
+                          £{svc ? svc.price + addonsTotal : 0}
+                        </motion.span>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </motion.div>
           )}
 
@@ -440,86 +593,9 @@ const BookingApp = () => {
             </motion.div>
           )}
 
-          {/* ══════ STEP 2: Add-ons ══════ */}
+          {/* ══════ STEP 2: Date ══════ */}
           {step === 2 && (
             <motion.div key="s2" custom={dir} variants={slideVariants} initial="enter" animate="center" exit="exit" transition={spring}
-              className="flex-1 max-w-lg mx-auto w-full px-5 pt-6 pb-32">
-              <StepHeader title="Any extras?" sub="Tap to add — or skip this step" />
-
-              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
-                className="mt-4 mb-5 rounded-2xl bg-muted/60 p-4">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-muted-foreground">{svc?.title} · {carType?.label}</span>
-                  <span className="font-semibold text-foreground tabular-nums">£{servicePrice}</span>
-                </div>
-                <AnimatePresence>
-                  {booking.addons.length > 0 && (
-                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.2 }} className="overflow-hidden">
-                      <div className="pt-2 mt-2 border-t border-border/60 space-y-1">
-                        {ADDONS.filter((a) => booking.addons.includes(a.id)).map((a) => (
-                          <div key={a.id} className="flex items-center justify-between text-xs">
-                            <span className="text-muted-foreground">{a.title}</span>
-                            <span className="font-medium text-foreground tabular-nums">+£{a.price}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-                <div className="flex items-center justify-between mt-2 pt-2 border-t border-border/60">
-                  <span className="font-bold text-sm text-foreground">Running total</span>
-                  <motion.span key={total} initial={{ scale: 1.15 }} animate={{ scale: 1 }}
-                    className="font-extrabold text-lg tabular-nums text-foreground">£{total}</motion.span>
-                </div>
-              </motion.div>
-
-              <div className="space-y-3">
-                {ADDONS.map((a, i) => {
-                  const selected = booking.addons.includes(a.id);
-                  const Icon = a.icon;
-                  return (
-                    <motion.button key={a.id} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.06 + i * 0.05, ...spring }} whileTap={{ scale: 0.97 }}
-                      onClick={() => toggleAddon(a.id)}
-                      className={cn(
-                        "w-full rounded-2xl p-4 text-left transition-all duration-200 flex items-center gap-3.5 active:scale-[0.97]",
-                        selected ? "ring-2 ring-foreground bg-card shadow-[var(--shadow-glow)]" : "ring-1 ring-border bg-card"
-                      )}>
-                      <div className={cn(
-                        "w-12 h-12 rounded-xl flex items-center justify-center shrink-0 transition-colors",
-                        selected ? "bg-foreground text-background" : "bg-muted text-muted-foreground"
-                      )}>
-                        <Icon size={20} />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <span className="font-bold text-sm text-foreground block">{a.title}</span>
-                        <span className="text-xs text-muted-foreground">{a.desc}</span>
-                      </div>
-                      <span className={cn(
-                        "font-extrabold tabular-nums shrink-0 transition-colors",
-                        selected ? "text-foreground" : "text-muted-foreground"
-                      )}>+£{a.price}</span>
-                      <div className={cn(
-                        "w-6 h-6 rounded-lg flex items-center justify-center transition-all shrink-0",
-                        selected ? "bg-foreground text-background" : "border-2 border-border"
-                      )}>
-                        {selected && (
-                          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 500, damping: 20 }}>
-                            <Check size={13} strokeWidth={3} />
-                          </motion.div>
-                        )}
-                      </div>
-                    </motion.button>
-                  );
-                })}
-              </div>
-            </motion.div>
-          )}
-
-          {/* ══════ STEP 3: Date ══════ */}
-          {step === 3 && (
-            <motion.div key="s3" custom={dir} variants={slideVariants} initial="enter" animate="center" exit="exit" transition={spring}
               className="flex-1 max-w-lg mx-auto w-full px-5 pt-6 pb-32"
               onAnimationComplete={() => {
                 if (!booking.date) {
@@ -575,9 +651,9 @@ const BookingApp = () => {
             </motion.div>
           )}
 
-          {/* ══════ STEP 4: Time ══════ */}
-          {step === 4 && (
-            <motion.div key="s4" custom={dir} variants={slideVariants} initial="enter" animate="center" exit="exit" transition={spring}
+          {/* ══════ STEP 3: Time ══════ */}
+          {step === 3 && (
+            <motion.div key="s3" custom={dir} variants={slideVariants} initial="enter" animate="center" exit="exit" transition={spring}
               className="flex-1 max-w-lg mx-auto w-full px-5 pt-6 pb-32"
               onAnimationComplete={() => {
                 if (!booking.window) {
@@ -641,9 +717,9 @@ const BookingApp = () => {
             </motion.div>
           )}
 
-          {/* ══════ STEP 5: Location & Contact ══════ */}
-          {step === 5 && (
-            <motion.div key="s5" custom={dir} variants={slideVariants} initial="enter" animate="center" exit="exit" transition={spring}
+          {/* ══════ STEP 4: Location & Contact ══════ */}
+          {step === 4 && (
+            <motion.div key="s4" custom={dir} variants={slideVariants} initial="enter" animate="center" exit="exit" transition={spring}
               className="flex-1 max-w-lg mx-auto w-full px-5 pt-6 pb-32">
 
               <motion.div initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }}
@@ -665,7 +741,6 @@ const BookingApp = () => {
 
               <StepHeader title="Where should we come?" sub="We'll wash your car at this location" />
 
-              {/* Quick location buttons */}
               <div className="flex gap-2.5 mt-4 mb-5">
                 <motion.button initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
                   whileTap={{ scale: 0.96 }}
@@ -722,9 +797,9 @@ const BookingApp = () => {
             </motion.div>
           )}
 
-          {/* ══════ STEP 6: Review ══════ */}
-          {step === 6 && (
-            <motion.div key="s6" custom={dir} variants={slideVariants} initial="enter" animate="center" exit="exit" transition={spring}
+          {/* ══════ STEP 5: Review ══════ */}
+          {step === 5 && (
+            <motion.div key="s5" custom={dir} variants={slideVariants} initial="enter" animate="center" exit="exit" transition={spring}
               className="flex-1 max-w-lg mx-auto w-full px-5 pt-6 pb-32">
               <StepHeader title="Review your booking" sub="Everything looks good?" />
 
@@ -746,11 +821,11 @@ const BookingApp = () => {
 
                 <div className="p-4 space-y-3.5 bg-card">
                   {[
-                    { icon: CalendarIcon, label: "Date", value: booking.date ? format(booking.date, "EEE, d MMM yyyy") : "" },
-                    { icon: Clock, label: "Time", value: WINDOWS.find((w) => w.id === booking.window)?.time },
-                    { icon: MapPin, label: "Location", value: `${booking.address}, ${booking.postcode}` },
-                    { icon: User, label: "Contact", value: `${booking.name} · ${booking.phone}` },
-                  ].map(({ icon: Ic, label, value }, i) => (
+                    { icon: CalendarIcon, label: "Date", value: booking.date ? format(booking.date, "EEE, d MMM yyyy") : "", editStep: 2 },
+                    { icon: Clock, label: "Time", value: WINDOWS.find((w) => w.id === booking.window)?.time, editStep: 3 },
+                    { icon: MapPin, label: "Location", value: `${booking.address}, ${booking.postcode}`, editStep: 4 },
+                    { icon: User, label: "Contact", value: `${booking.name} · ${booking.phone}`, editStep: 4 },
+                  ].map(({ icon: Ic, label, value, editStep }, i) => (
                     <motion.div key={label} initial={{ x: -6, opacity: 0 }} animate={{ x: 0, opacity: 1 }}
                       transition={{ delay: 0.15 + i * 0.04 }} className="flex items-center gap-3">
                       <div className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center shrink-0">
@@ -761,16 +836,23 @@ const BookingApp = () => {
                         <p className="text-sm font-medium text-foreground truncate">{value}</p>
                       </div>
                       <motion.button whileTap={{ scale: 0.9 }}
-                        onClick={() => goTo(label === "Date" ? 3 : label === "Time" ? 4 : 5)}
+                        onClick={() => goTo(editStep)}
                         className="text-[11px] font-semibold text-muted-foreground hover:text-foreground transition-colors px-2 py-1 -mr-2">
                         Edit
                       </motion.button>
                     </motion.div>
                   ))}
 
-                  {booking.addons.length > 0 && (
+                  {selectedAddons.length > 0 && (
                     <div className="pt-2 border-t border-border space-y-2">
-                      {ADDONS.filter((a) => booking.addons.includes(a.id)).map((a) => (
+                      <div className="flex items-center justify-between">
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Add-ons</p>
+                        <motion.button whileTap={{ scale: 0.9 }} onClick={() => goTo(0)}
+                          className="text-[11px] font-semibold text-muted-foreground hover:text-foreground transition-colors px-2 py-1 -mr-2">
+                          Edit
+                        </motion.button>
+                      </div>
+                      {selectedAddons.map((a) => (
                         <div key={a.id} className="flex items-center justify-between text-sm">
                           <span className="text-muted-foreground flex items-center gap-2">
                             <a.icon size={12} /> {a.title}
@@ -807,7 +889,7 @@ const BookingApp = () => {
             className="fixed bottom-0 inset-x-0 z-40 bg-background/95 backdrop-blur-xl border-t border-border pb-safe">
             <div className="max-w-lg mx-auto px-5 py-4 flex items-center gap-4">
               <div className="flex-1 min-w-0">
-                {step >= 1 && total > 0 ? (
+                {booking.service && total > 0 ? (
                   <div>
                     <div className="flex items-baseline gap-1.5">
                       <motion.span key={total} initial={{ y: -6, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
@@ -815,28 +897,27 @@ const BookingApp = () => {
                       {addonsTotal > 0 && (
                         <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }}
                           className="text-[10px] text-muted-foreground font-medium">
-                          incl. £{addonsTotal} extras
+                          incl. {selectedAddons.length} extra{selectedAddons.length > 1 ? "s" : ""}
                         </motion.span>
                       )}
                     </div>
                     <span className="text-[10px] text-muted-foreground block mt-0.5 truncate">
-                      {[svc?.title, carType?.label, booking.addons.length > 0 ? `+${booking.addons.length} extra${booking.addons.length > 1 ? "s" : ""}` : null]
-                        .filter(Boolean).join(" · ")}
+                      {[svc?.title, carType?.label].filter(Boolean).join(" · ")}
                     </span>
                   </div>
                 ) : (
-                  <span className="text-sm text-muted-foreground">Select to continue</span>
+                  <span className="text-sm text-muted-foreground">Build your package</span>
                 )}
               </div>
               <motion.button
                 whileTap={canContinue() ? { scale: 0.95 } : {}}
                 disabled={!canContinue() || submitting}
-                onClick={step === 6 ? confirm : next}
+                onClick={step === 5 ? confirm : next}
                 className="flex-[1.5] bg-foreground text-background font-bold text-[15px] h-14 rounded-2xl flex items-center justify-center gap-2 transition-all disabled:opacity-30 active:scale-[0.95]">
-                {step === 6 ? (
+                {step === 5 ? (
                   <>Confirm · £{total} <CheckCircle2 size={16} /></>
-                ) : step === 2 ? (
-                  <>{booking.addons.length > 0 ? "Continue" : "Skip"} <ChevronRight size={16} /></>
+                ) : step === 0 ? (
+                  <>Continue with package <ChevronRight size={16} /></>
                 ) : (
                   <>Continue <ChevronRight size={16} /></>
                 )}
