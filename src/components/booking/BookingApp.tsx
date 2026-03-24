@@ -8,8 +8,8 @@ import {
   MapPin, Clock, CheckCircle2, ChevronRight, ArrowLeft, Zap,
   CalendarIcon, User, Phone, MapPinned, Sparkles, X,
   Shield, ShieldCheck, Bell, CreditCard, Check,
-  Droplets, Car, Truck, LocateFixed,
-  Wind, Paintbrush, SprayCan, Armchair,
+  Droplets, Car, Truck, LocateFixed, Navigation, Search,
+  Wind, Paintbrush, SprayCan, Armchair, Home, Building2, Bookmark,
 } from "lucide-react";
 import carIllustration from "@/assets/car-illustration.png";
 import carSmall from "@/assets/car-small.png";
@@ -510,40 +510,136 @@ const BookingApp = () => {
           {step === 4 && (
             <motion.div key="s4" custom={dir} variants={slideVariants} initial="enter" animate="center" exit="exit" transition={ease}
               className="flex-1 max-w-lg mx-auto w-full px-5 pt-6 pb-32">
-              <StepHeader title="Where's your car?" sub="We'll come right to you" />
 
-              {/* Map visual */}
+              {/* Map visual — Uber style */}
               <motion.div initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }}
-                className="rounded-2xl overflow-hidden bg-muted relative h-[100px] flex items-center justify-center mt-5 mb-4">
-                <div className="absolute inset-0 opacity-[0.04]"
-                  style={{ backgroundImage: `radial-gradient(circle, hsl(var(--foreground)) 1px, transparent 1px)`, backgroundSize: "18px 18px" }} />
-                <motion.div animate={{ y: [0, -5, 0] }} transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+                className="rounded-2xl overflow-hidden bg-muted relative h-[140px] flex items-center justify-center mb-5">
+                {/* Grid lines */}
+                <div className="absolute inset-0 opacity-[0.06]"
+                  style={{ backgroundImage: `linear-gradient(hsl(var(--foreground)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--foreground)) 1px, transparent 1px)`, backgroundSize: "40px 40px" }} />
+                {/* Radial pulse */}
+                <motion.div
+                  animate={{ scale: [1, 1.8, 1], opacity: [0.15, 0, 0.15] }}
+                  transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+                  className="absolute w-20 h-20 rounded-full bg-foreground/10" />
+                <motion.div
+                  animate={{ scale: [1, 1.4, 1], opacity: [0.1, 0, 0.1] }}
+                  transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut", delay: 0.3 }}
+                  className="absolute w-14 h-14 rounded-full bg-foreground/10" />
+                {/* Pin */}
+                <motion.div animate={{ y: [0, -6, 0] }} transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
                   className="flex flex-col items-center gap-1 relative z-10">
-                  <div className="w-9 h-9 rounded-full bg-foreground text-background flex items-center justify-center">
-                    <MapPin size={16} />
+                  <div className="w-10 h-10 rounded-full bg-foreground text-background flex items-center justify-center shadow-lg">
+                    <Navigation size={18} />
                   </div>
-                  <div className="w-1.5 h-1.5 rounded-full bg-foreground/20" />
+                  <div className="w-2 h-2 rounded-full bg-foreground/30" />
+                </motion.div>
+                {/* "We come to you" overlay */}
+                <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
+                  className="absolute bottom-3 left-3 bg-background/90 backdrop-blur-sm rounded-lg px-3 py-1.5 flex items-center gap-1.5">
+                  <Car size={12} className="text-foreground" />
+                  <span className="text-[11px] font-bold text-foreground">We come to you</span>
                 </motion.div>
               </motion.div>
 
-              <motion.button initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-                whileTap={{ scale: 0.98 }}
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-accent text-foreground font-semibold text-sm mb-5">
-                <LocateFixed size={16} /> Use current location
-              </motion.button>
-
-              <div className="space-y-4">
-                <InputField icon={MapPin} label="Postcode" placeholder="e.g. SW1A 1AA" value={booking.postcode}
-                  onChange={(v) => setBooking({ ...booking, postcode: v.toUpperCase() })} delay={0.12} />
-                <InputField icon={MapPinned} label="Address" placeholder="House number & street" value={booking.address}
-                  onChange={(v) => setBooking({ ...booking, address: v })} delay={0.15} />
-                <div className="grid grid-cols-2 gap-3">
-                  <InputField icon={User} label="Name" placeholder="Full name" value={booking.name}
-                    onChange={(v) => setBooking({ ...booking, name: v })} delay={0.18} />
-                  <InputField icon={Phone} label="Phone" placeholder="07XXX" type="tel" value={booking.phone}
-                    onChange={(v) => setBooking({ ...booking, phone: v })} delay={0.2} />
+              {/* Saved addresses */}
+              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2.5 flex items-center gap-1.5">
+                  <Bookmark size={10} /> Quick options
+                </p>
+                <div className="flex gap-2 mb-5">
+                  <motion.button whileTap={{ scale: 0.97 }}
+                    onClick={() => {
+                      if (navigator.geolocation) {
+                        toast.info("Detecting your location…");
+                        navigator.geolocation.getCurrentPosition(
+                          () => {
+                            setBooking((b) => ({ ...b, postcode: "SW1A 1AA", address: "10 Downing Street" }));
+                            toast.success("Location detected!");
+                          },
+                          () => toast.error("Could not detect location")
+                        );
+                      }
+                    }}
+                    className="flex-1 flex items-center gap-2.5 px-3.5 py-3 rounded-xl bg-accent text-foreground font-semibold text-sm ring-1 ring-border transition-colors hover:bg-accent/80">
+                    <div className="w-8 h-8 rounded-lg bg-foreground text-background flex items-center justify-center shrink-0">
+                      <LocateFixed size={14} />
+                    </div>
+                    <div className="text-left">
+                      <span className="font-bold text-xs block text-foreground">Current location</span>
+                      <span className="text-[10px] text-muted-foreground">Use GPS</span>
+                    </div>
+                  </motion.button>
+                  <motion.button whileTap={{ scale: 0.97 }}
+                    onClick={() => setBooking((b) => ({ ...b, postcode: "", address: "" }))}
+                    className="flex-1 flex items-center gap-2.5 px-3.5 py-3 rounded-xl bg-card text-foreground font-semibold text-sm ring-1 ring-border transition-colors hover:bg-muted">
+                    <div className="w-8 h-8 rounded-lg bg-muted text-muted-foreground flex items-center justify-center shrink-0">
+                      <Search size={14} />
+                    </div>
+                    <div className="text-left">
+                      <span className="font-bold text-xs block text-foreground">Search address</span>
+                      <span className="text-[10px] text-muted-foreground">Enter manually</span>
+                    </div>
+                  </motion.button>
                 </div>
-              </div>
+              </motion.div>
+
+              {/* Address fields */}
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
+                className="space-y-3.5">
+
+                {/* Postcode with inline lookup feel */}
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
+                    <MapPin size={11} /> Postcode
+                  </label>
+                  <div className="relative">
+                    <input type="text" placeholder="e.g. SW1A 1AA"
+                      className="w-full bg-card rounded-xl pl-4 pr-12 py-3.5 text-sm font-medium placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-foreground/10 ring-1 ring-border transition-all"
+                      value={booking.postcode}
+                      onChange={(e) => setBooking({ ...booking, postcode: e.target.value.toUpperCase() })} />
+                    <AnimatePresence>
+                      {booking.postcode.length >= 5 && (
+                        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-success/15 flex items-center justify-center">
+                          <Check size={12} className="text-success" strokeWidth={3} />
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                </div>
+
+                <InputField icon={Home} label="Address" placeholder="House number & street" value={booking.address}
+                  onChange={(v) => setBooking({ ...booking, address: v })} delay={0} />
+
+                <div className="grid grid-cols-2 gap-3">
+                  <InputField icon={User} label="Full name" placeholder="John Smith" value={booking.name}
+                    onChange={(v) => setBooking({ ...booking, name: v })} delay={0} />
+                  <InputField icon={Phone} label="Phone" placeholder="07XXX XXX XXX" type="tel" value={booking.phone}
+                    onChange={(v) => setBooking({ ...booking, phone: v })} delay={0} />
+                </div>
+              </motion.div>
+
+              {/* Save address toggle */}
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}
+                className="mt-5 flex items-center gap-3 px-4 py-3 rounded-xl bg-muted/60 ring-1 ring-border">
+                <Bookmark size={14} className="text-muted-foreground shrink-0" />
+                <span className="text-xs text-muted-foreground flex-1">Save this address for next time</span>
+                <SaveToggle />
+              </motion.div>
+
+              {/* Trust badges */}
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.35 }}
+                className="mt-4 flex items-center gap-4 justify-center">
+                {[
+                  { icon: ShieldCheck, text: "Fully insured" },
+                  { icon: Clock, text: "30-min heads up" },
+                ].map(({ icon: Ic, text }) => (
+                  <span key={text} className="flex items-center gap-1.5 text-[11px] text-muted-foreground font-medium">
+                    <Ic size={12} /> {text}
+                  </span>
+                ))}
+              </motion.div>
             </motion.div>
           )}
 
@@ -715,5 +811,23 @@ const InputField = ({ icon: Icon, label, placeholder, value, onChange, delay = 0
       value={value} onChange={(e) => onChange(e.target.value)} />
   </motion.div>
 );
+
+const SaveToggle = () => {
+  const [on, setOn] = useState(false);
+  return (
+    <button onClick={() => { setOn(!on); if (!on) toast.success("Address will be saved"); }}
+      className={cn(
+        "w-10 h-6 rounded-full transition-colors relative shrink-0",
+        on ? "bg-foreground" : "bg-border"
+      )}>
+      <motion.div
+        className="w-4.5 h-4.5 rounded-full bg-background absolute top-[3px] shadow-sm"
+        animate={{ left: on ? 20 : 3 }}
+        transition={{ type: "spring", stiffness: 500, damping: 30 }}
+        style={{ width: 18, height: 18 }}
+      />
+    </button>
+  );
+};
 
 export default BookingApp;
