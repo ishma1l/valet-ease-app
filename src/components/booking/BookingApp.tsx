@@ -158,6 +158,11 @@ const BookingApp = () => {
     });
     setSubmitting(false);
     if (error) { toast.error("Booking failed. Please try again."); return; }
+    pushNotification({
+      title: "Booking confirmed!",
+      body: `Your ${svc?.title} is booked for ${booking.date ? format(booking.date, "EEE, d MMM") : ""}. We'll find a cleaner shortly.`,
+      icon: "confirmed",
+    });
     setConfirmed(true);
   };
 
