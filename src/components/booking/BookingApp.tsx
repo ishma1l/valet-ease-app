@@ -829,10 +829,12 @@ const StepHeader = ({ title, sub }: { title: string; sub: string }) => (
   </header>
 );
 
-const RadioDot = ({ selected }: { selected: boolean }) => (
+const RadioDot = ({ selected, inverted }: { selected: boolean; inverted?: boolean }) => (
   <div className={cn(
     "w-5 h-5 rounded-full flex items-center justify-center transition-all",
-    selected ? "bg-foreground text-background" : "border-2 border-border"
+    selected
+      ? inverted ? "bg-background text-foreground" : "bg-foreground text-background"
+      : "border-2 border-border"
   )}>
     {selected && (
       <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 500, damping: 20 }}>
