@@ -1108,6 +1108,21 @@ const BookingApp = () => {
           <motion.div initial={{ y: 100 }} animate={{ y: 0 }} exit={{ y: 100 }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
             className="fixed bottom-0 inset-x-0 z-40 bg-background/95 backdrop-blur-xl border-t border-border pb-safe">
+
+            {/* Subscription nudge banner */}
+            {step === 0 && booking.service && booking.plan === "once" && (
+              <motion.div initial={{ height: 0 }} animate={{ height: "auto" }} className="overflow-hidden">
+                <button onClick={() => setBooking((b) => ({ ...b, plan: "weekly" }))}
+                  className="w-full px-5 py-2 bg-emerald-50 flex items-center gap-2 text-left">
+                  <Sparkles size={13} className="text-emerald-600 shrink-0" />
+                  <span className="text-[11px] text-emerald-700 font-semibold flex-1">
+                    This wash would be <span className="font-extrabold">£{Math.round((svc?.price || 0) * 0.8)}/wash</span> with a Weekly plan
+                  </span>
+                  <ChevronRight size={14} className="text-emerald-500" />
+                </button>
+              </motion.div>
+            )}
+
             <div className="max-w-lg mx-auto px-5 py-4 flex items-center gap-4">
               <div className="flex-1 min-w-0">
                 {booking.service && total > 0 ? (
@@ -1123,7 +1138,9 @@ const BookingApp = () => {
                       )}
                     </div>
                     <span className="text-[10px] text-muted-foreground block mt-0.5 truncate">
-                      {[svc?.title, booking.plan !== "once" ? activePlan.label : null, carType?.label].filter(Boolean).join(" · ")}
+                      {booking.plan !== "once"
+                        ? `${activePlan.label} subscription · ${svc?.title}${carType ? ` · ${carType.label}` : ""}`
+                        : [svc?.title, carType?.label].filter(Boolean).join(" · ")}
                     </span>
                   </div>
                 ) : (
@@ -1134,9 +1151,16 @@ const BookingApp = () => {
                 whileTap={canContinue() ? { scale: 0.95 } : {}}
                 disabled={!canContinue() || submitting}
                 onClick={step === 5 ? confirm : next}
-                className="flex-[1.5] bg-foreground text-background font-bold text-[15px] h-14 rounded-2xl flex items-center justify-center gap-2 transition-all disabled:opacity-30 active:scale-[0.95]">
+                className={cn(
+                  "flex-[1.5] font-bold text-[15px] h-14 rounded-2xl flex items-center justify-center gap-2 transition-all disabled:opacity-30 active:scale-[0.95]",
+                  booking.plan !== "once" && step === 5
+                    ? "bg-emerald-500 text-white"
+                    : "bg-foreground text-background"
+                )}>
                 {step === 5 ? (
-                  <>Confirm · £{total} <CheckCircle2 size={16} /></>
+                  booking.plan !== "once"
+                    ? <>Subscribe · £{total}/wash <Repeat size={16} /></>
+                    : <>Confirm · £{total} <CheckCircle2 size={16} /></>
                 ) : step === 0 ? (
                   <>Continue with package <ChevronRight size={16} /></>
                 ) : (
