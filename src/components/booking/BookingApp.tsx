@@ -991,9 +991,21 @@ const BookingApp = () => {
                   )}
                 </div>
 
+                {discountPct > 0 && (
+                  <div className="bg-emerald-50 px-4 py-2.5 flex items-center justify-between border-t border-border">
+                    <span className="text-xs text-emerald-700 font-semibold flex items-center gap-1.5">
+                      <Repeat size={11} /> {activePlan.label} plan · {discountPct}% off
+                    </span>
+                    <span className="text-xs font-bold text-emerald-600 tabular-nums">−£{discountAmount}</span>
+                  </div>
+                )}
+
                 <div className="bg-muted/50 px-4 py-4 flex justify-between items-center border-t border-border">
-                  <span className="font-bold text-foreground text-sm">Total</span>
-                  <span className="text-2xl font-extrabold tabular-nums text-foreground">£{total}</span>
+                  <span className="font-bold text-foreground text-sm">Total{booking.plan !== "once" ? " per wash" : ""}</span>
+                  <div className="text-right flex items-baseline gap-2">
+                    {discountPct > 0 && <span className="text-sm text-muted-foreground line-through tabular-nums">£{baseTotal}</span>}
+                    <span className={cn("text-2xl font-extrabold tabular-nums", discountPct > 0 ? "text-emerald-600" : "text-foreground")}>£{total}</span>
+                  </div>
                 </div>
               </motion.div>
 
