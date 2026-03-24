@@ -1352,6 +1352,9 @@ const LiveTracking = ({ booking, svc, carType, total, baseTotal, discountPct, ac
           )}
         </AnimatePresence>
 
+        {/* Before & After Photos (customer view) */}
+        <JobPhotosCustomerView bookingId={booking.service ? undefined : undefined} />
+
         {/* Booking summary card */}
         <div className="rounded-2xl ring-1 ring-border bg-card overflow-hidden mb-5">
           <div className="p-4 flex items-center gap-3.5 border-b border-border">
