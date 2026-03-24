@@ -8,8 +8,8 @@ import {
   MapPin, Clock, CheckCircle2, ChevronRight, ArrowLeft, Zap,
   CalendarIcon, User, Phone, MapPinned, Sparkles, X,
   Shield, ShieldCheck, Bell, CreditCard, Check,
-  Droplets, Car, Truck, LocateFixed,
-  Wind, Paintbrush, SprayCan, Armchair,
+  Droplets, Car, Truck, LocateFixed, Navigation, Search,
+  Wind, Paintbrush, SprayCan, Armchair, Home, Building2, Bookmark,
 } from "lucide-react";
 import carIllustration from "@/assets/car-illustration.png";
 import carSmall from "@/assets/car-small.png";
