@@ -1,5 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import BeforeAfterComparison from "@/components/photos/BeforeAfterComparison";
+import { NotificationBell, NotificationToast } from "@/components/notifications/NotificationCenter";
+import { pushNotification } from "@/hooks/use-notifications";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { AnimatePresence, motion } from "framer-motion";
