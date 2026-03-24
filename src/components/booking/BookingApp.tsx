@@ -441,25 +441,29 @@ const BookingApp = () => {
                           </div>
                           <p className="text-muted-foreground text-xs mt-0.5">{s.desc}</p>
                         </div>
-                        <div className="flex flex-col items-end gap-1.5 shrink-0">
-                          <span className="text-lg font-extrabold tabular-nums text-foreground">£{s.price}</span>
+                      <div className="flex flex-col items-end gap-1.5 shrink-0">
+                          {booking.plan !== "once" ? (
+                            <div className="text-right">
+                              <span className="text-xs text-muted-foreground line-through tabular-nums">£{s.price}</span>
+                              <span className="text-lg font-extrabold tabular-nums text-emerald-600 ml-1">£{Math.round(s.price * (1 - activePlan.discount / 100))}</span>
+                            </div>
+                          ) : (
+                            <span className="text-lg font-extrabold tabular-nums text-foreground">£{s.price}</span>
+                          )}
                           <RadioDot selected={selected} />
                         </div>
                       </div>
 
-                      {/* Expanded includes list */}
-                      <AnimatePresence>
-                        {selected && (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: "auto", opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            transition={{ duration: 0.25, ease: "easeOut" }}
-                            className="overflow-hidden">
-                            <div className="px-4 pb-4 pt-1 border-t border-border/50">
-                              <div className="flex items-center gap-1.5 mb-2">
-                                <Clock size={10} className="text-muted-foreground" />
-                                <span className="text-[11px] text-muted-foreground font-medium">{s.duration}</span>
+                      {/* Subscription upsell on one-time */}
+                      {selected && booking.plan === "once" && (
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                          className="mx-4 mb-1 px-3 py-2 bg-emerald-50 rounded-xl flex items-center gap-2">
+                          <Repeat size={12} className="text-emerald-600 shrink-0" />
+                          <span className="text-[11px] text-emerald-700 font-semibold">
+                            Subscribe & save £{Math.round(s.price * 0.2)}/wash — {Math.round(s.price * 0.2 * 52)}/year
+                          </span>
+                        </motion.div>
+                      )}
                               </div>
                               <div className="flex flex-wrap gap-1.5">
                                 {s.includes.map((item) => (
