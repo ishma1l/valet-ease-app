@@ -65,6 +65,38 @@ export type Database = {
         }
         Relationships: []
       }
+      job_photos: {
+        Row: {
+          booking_id: string
+          created_at: string
+          id: string
+          photo_type: string
+          storage_path: string
+        }
+        Insert: {
+          booking_id: string
+          created_at?: string
+          id?: string
+          photo_type: string
+          storage_path: string
+        }
+        Update: {
+          booking_id?: string
+          created_at?: string
+          id?: string
+          photo_type?: string
+          storage_path?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "job_photos_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
