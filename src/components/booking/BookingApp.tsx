@@ -630,20 +630,35 @@ const BookingApp = () => {
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
             className="fixed bottom-0 inset-x-0 z-40 bg-background/95 backdrop-blur-xl border-t border-border">
             <div className="max-w-lg mx-auto px-5 py-3.5 flex items-center gap-4">
-              {step >= 1 ? (
-                <div className="flex-1">
-                  <span className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground block">Total</span>
-                  <motion.span key={total} initial={{ y: -4, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
-                    className="text-xl font-extrabold tabular-nums text-foreground block leading-tight">£{total}</motion.span>
-                </div>
-              ) : <div className="flex-1" />}
+              <div className="flex-1 min-w-0">
+                {step >= 1 && total > 0 ? (
+                  <div>
+                    <div className="flex items-baseline gap-1.5">
+                      <motion.span key={total} initial={{ y: -6, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
+                        className="text-xl font-extrabold tabular-nums text-foreground leading-tight">£{total}</motion.span>
+                      {addonsTotal > 0 && (
+                        <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                          className="text-[10px] text-muted-foreground font-medium">
+                          incl. £{addonsTotal} extras
+                        </motion.span>
+                      )}
+                    </div>
+                    <span className="text-[10px] text-muted-foreground block mt-0.5 truncate">
+                      {[svc?.title, carType?.label, booking.addons.length > 0 ? `+${booking.addons.length} add-on${booking.addons.length > 1 ? "s" : ""}` : null]
+                        .filter(Boolean).join(" · ")}
+                    </span>
+                  </div>
+                ) : (
+                  <span className="text-sm text-muted-foreground">Select to see pricing</span>
+                )}
+              </div>
               <motion.button
                 whileTap={canContinue() ? { scale: 0.97 } : {}}
                 disabled={!canContinue() || submitting}
                 onClick={step === 5 ? confirm : next}
-                className="flex-[2] bg-foreground text-background font-bold text-[15px] py-4 rounded-xl flex items-center justify-center gap-2 transition-all disabled:opacity-30">
+                className="flex-[1.5] bg-foreground text-background font-bold text-[15px] py-4 rounded-xl flex items-center justify-center gap-2 transition-all disabled:opacity-30">
                 {step === 5 ? (
-                  <>Confirm Booking <CheckCircle2 size={16} /></>
+                  <>Confirm · £{total} <CheckCircle2 size={16} /></>
                 ) : step === 2 ? (
                   <>{booking.addons.length > 0 ? "Continue" : "Skip"} <ChevronRight size={16} /></>
                 ) : (
