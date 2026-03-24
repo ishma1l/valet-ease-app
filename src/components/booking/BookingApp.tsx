@@ -362,7 +362,36 @@ const BookingApp = () => {
               className="flex-1 max-w-lg mx-auto w-full px-5 pt-6 pb-32">
               <StepHeader title="Any extras?" sub="Optional add-ons for a perfect finish" />
 
-              <div className="space-y-3 mt-5">
+              {/* Live price summary */}
+              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
+                className="mt-4 mb-5 rounded-xl bg-muted/60 p-3.5">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">{svc?.title} · {carType?.label}</span>
+                  <span className="font-semibold text-foreground tabular-nums">£{servicePrice}</span>
+                </div>
+                <AnimatePresence>
+                  {booking.addons.length > 0 && (
+                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.2 }} className="overflow-hidden">
+                      <div className="pt-2 mt-2 border-t border-border/60 space-y-1">
+                        {ADDONS.filter((a) => booking.addons.includes(a.id)).map((a) => (
+                          <div key={a.id} className="flex items-center justify-between text-xs">
+                            <span className="text-muted-foreground">{a.title}</span>
+                            <span className="font-medium text-foreground tabular-nums">+£{a.price}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+                <div className="flex items-center justify-between mt-2 pt-2 border-t border-border/60">
+                  <span className="font-bold text-sm text-foreground">Running total</span>
+                  <motion.span key={total} initial={{ scale: 1.15 }} animate={{ scale: 1 }}
+                    className="font-extrabold text-lg tabular-nums text-foreground">£{total}</motion.span>
+                </div>
+              </motion.div>
+
+              <div className="space-y-3">
                 {ADDONS.map((a, i) => {
                   const selected = booking.addons.includes(a.id);
                   const Icon = a.icon;
@@ -372,7 +401,7 @@ const BookingApp = () => {
                       onClick={() => toggleAddon(a.id)}
                       className={cn(
                         "w-full rounded-2xl p-4 text-left transition-all duration-200 flex items-center gap-3.5",
-                        selected ? "ring-2 ring-foreground bg-card" : "ring-1 ring-border bg-card"
+                        selected ? "ring-2 ring-foreground bg-card shadow-[var(--shadow-glow)]" : "ring-1 ring-border bg-card"
                       )}>
                       <div className={cn(
                         "w-11 h-11 rounded-xl flex items-center justify-center shrink-0 transition-colors",
@@ -384,12 +413,19 @@ const BookingApp = () => {
                         <span className="font-bold text-sm text-foreground block">{a.title}</span>
                         <span className="text-xs text-muted-foreground">{a.desc}</span>
                       </div>
-                      <span className="font-extrabold tabular-nums text-foreground shrink-0">+£{a.price}</span>
+                      <span className={cn(
+                        "font-extrabold tabular-nums shrink-0 transition-colors",
+                        selected ? "text-foreground" : "text-muted-foreground"
+                      )}>+£{a.price}</span>
                       <div className={cn(
                         "w-5 h-5 rounded flex items-center justify-center transition-all shrink-0",
                         selected ? "bg-foreground text-background" : "border-2 border-border rounded"
                       )}>
-                        {selected && <Check size={12} strokeWidth={3} />}
+                        {selected && (
+                          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 500, damping: 20 }}>
+                            <Check size={12} strokeWidth={3} />
+                          </motion.div>
+                        )}
                       </div>
                     </motion.button>
                   );
@@ -594,20 +630,35 @@ const BookingApp = () => {
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
             className="fixed bottom-0 inset-x-0 z-40 bg-background/95 backdrop-blur-xl border-t border-border">
             <div className="max-w-lg mx-auto px-5 py-3.5 flex items-center gap-4">
-              {step >= 1 ? (
-                <div className="flex-1">
-                  <span className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground block">Total</span>
-                  <motion.span key={total} initial={{ y: -4, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
-                    className="text-xl font-extrabold tabular-nums text-foreground block leading-tight">£{total}</motion.span>
-                </div>
-              ) : <div className="flex-1" />}
+              <div className="flex-1 min-w-0">
+                {step >= 1 && total > 0 ? (
+                  <div>
+                    <div className="flex items-baseline gap-1.5">
+                      <motion.span key={total} initial={{ y: -6, opacity: 0 }} animate={{ y: 0, opacity: 1 }}
+                        className="text-xl font-extrabold tabular-nums text-foreground leading-tight">£{total}</motion.span>
+                      {addonsTotal > 0 && (
+                        <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                          className="text-[10px] text-muted-foreground font-medium">
+                          incl. £{addonsTotal} extras
+                        </motion.span>
+                      )}
+                    </div>
+                    <span className="text-[10px] text-muted-foreground block mt-0.5 truncate">
+                      {[svc?.title, carType?.label, booking.addons.length > 0 ? `+${booking.addons.length} add-on${booking.addons.length > 1 ? "s" : ""}` : null]
+                        .filter(Boolean).join(" · ")}
+                    </span>
+                  </div>
+                ) : (
+                  <span className="text-sm text-muted-foreground">Select to see pricing</span>
+                )}
+              </div>
               <motion.button
                 whileTap={canContinue() ? { scale: 0.97 } : {}}
                 disabled={!canContinue() || submitting}
                 onClick={step === 5 ? confirm : next}
-                className="flex-[2] bg-foreground text-background font-bold text-[15px] py-4 rounded-xl flex items-center justify-center gap-2 transition-all disabled:opacity-30">
+                className="flex-[1.5] bg-foreground text-background font-bold text-[15px] py-4 rounded-xl flex items-center justify-center gap-2 transition-all disabled:opacity-30">
                 {step === 5 ? (
-                  <>Confirm Booking <CheckCircle2 size={16} /></>
+                  <>Confirm · £{total} <CheckCircle2 size={16} /></>
                 ) : step === 2 ? (
                   <>{booking.addons.length > 0 ? "Continue" : "Skip"} <ChevronRight size={16} /></>
                 ) : (
