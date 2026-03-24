@@ -10,6 +10,7 @@ import {
   Shield, ShieldCheck, Bell, CreditCard, Check,
   Droplets, Car, Truck, LocateFixed, Navigation, Search,
   Wind, Paintbrush, SprayCan, Armchair, Home, Building2, Bookmark,
+  Sun, CloudSun, Sunset, AlertCircle,
 } from "lucide-react";
 import carIllustration from "@/assets/car-illustration.png";
 import carSmall from "@/assets/car-small.png";
