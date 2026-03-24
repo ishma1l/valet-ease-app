@@ -621,13 +621,25 @@ const BookingApp = () => {
                           <div className="flex-1 min-w-0">
                             <span className="font-bold text-sm text-foreground block leading-tight">{a.title}</span>
                             <span className="text-[11px] text-muted-foreground leading-tight">{a.desc}</span>
+                            {booking.plan === "weekly" && i === 0 && (
+                              <span className="text-[9px] font-bold text-emerald-600 block mt-0.5">FREE with your plan</span>
+                            )}
+                            {booking.plan !== "once" && booking.plan !== "weekly" && (
+                              <span className="text-[9px] font-bold text-emerald-600 block mt-0.5">Would be free on Weekly plan</span>
+                            )}
                           </div>
                         </div>
                         <div className="flex items-center justify-between mt-2.5 pt-2 border-t border-border/50">
-                          <span className={cn(
-                            "font-extrabold text-sm tabular-nums transition-colors",
-                            selected ? "text-foreground" : "text-muted-foreground"
-                          )}>+£{a.price}</span>
+                          {booking.plan === "weekly" && i === 0 ? (
+                            <span className="font-extrabold text-sm tabular-nums text-emerald-600 flex items-center gap-1">
+                              <span className="line-through text-muted-foreground">£{a.price}</span> FREE
+                            </span>
+                          ) : (
+                            <span className={cn(
+                              "font-extrabold text-sm tabular-nums transition-colors",
+                              selected ? "text-foreground" : "text-muted-foreground"
+                            )}>+£{a.price}</span>
+                          )}
                           <div className={cn(
                             "w-5 h-5 rounded-md flex items-center justify-center transition-all",
                             selected ? "bg-foreground text-background" : "border-2 border-border"
