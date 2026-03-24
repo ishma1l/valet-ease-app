@@ -1,5 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import BeforeAfterComparison from "@/components/photos/BeforeAfterComparison";
+import { NotificationBell, NotificationToast } from "@/components/notifications/NotificationCenter";
+import { pushNotification } from "@/hooks/use-notifications";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { AnimatePresence, motion } from "framer-motion";
@@ -156,6 +158,11 @@ const BookingApp = () => {
     });
     setSubmitting(false);
     if (error) { toast.error("Booking failed. Please try again."); return; }
+    pushNotification({
+      title: "Booking confirmed!",
+      body: `Your ${svc?.title} is booked for ${booking.date ? format(booking.date, "EEE, d MMM") : ""}. We'll find a cleaner shortly.`,
+      icon: "confirmed",
+    });
     setConfirmed(true);
   };
 
@@ -321,9 +328,12 @@ const BookingApp = () => {
             ) : null}
             <span className="text-lg font-extrabold tracking-tight">Valet Ease</span>
           </div>
-          <span className="text-xs text-muted-foreground font-medium tabular-nums">
-            {step + 1} of {TOTAL_STEPS}
-          </span>
+          <div className="flex items-center gap-1">
+            <NotificationBell />
+            <span className="text-xs text-muted-foreground font-medium tabular-nums">
+              {step + 1} of {TOTAL_STEPS}
+            </span>
+          </div>
         </div>
         <div className="max-w-lg mx-auto px-5 pb-0.5 flex gap-1">
           {Array.from({ length: TOTAL_STEPS }, (_, i) => (
@@ -1142,12 +1152,21 @@ const LiveTracking = ({ booking, svc, carType, total, baseTotal, discountPct, ac
   const [eta, setEta] = useState(18);
   const selectedAddons = ADDONS.filter((a) => booking.addons.includes(a.id));
 
-  // Simulate stage progression
+  // Simulate stage progression with notifications
   useEffect(() => {
     const timers = [
-      setTimeout(() => setStageIdx(1), 3000),
-      setTimeout(() => setStageIdx(2), 7000),
-      setTimeout(() => setStageIdx(3), 15000),
+      setTimeout(() => {
+        setStageIdx(1);
+        pushNotification({ title: "Cleaner assigned", body: "James M. has been assigned to your wash and is getting ready.", icon: "assigned" });
+      }, 3000),
+      setTimeout(() => {
+        setStageIdx(2);
+        pushNotification({ title: "On the way!", body: "James is heading to your location. Estimated arrival: 18 min.", icon: "onway" });
+      }, 7000),
+      setTimeout(() => {
+        setStageIdx(3);
+        pushNotification({ title: "Cleaner arrived", body: "James has arrived at your location. Your wash is starting now!", icon: "arrived" });
+      }, 15000),
     ];
     return () => timers.forEach(clearTimeout);
   }, []);
