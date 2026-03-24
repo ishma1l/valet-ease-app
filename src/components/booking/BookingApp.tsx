@@ -10,6 +10,7 @@ import {
   Shield, ShieldCheck, Bell, CreditCard, Check,
   Droplets, Car, Truck, LocateFixed, Navigation, Search,
   Wind, Paintbrush, SprayCan, Armchair, Home, Building2, Bookmark,
+  Sun, CloudSun, Sunset, AlertCircle,
 } from "lucide-react";
 import carIllustration from "@/assets/car-illustration.png";
 import carSmall from "@/assets/car-small.png";
@@ -52,9 +53,9 @@ const ADDONS = [
 ];
 
 const WINDOWS = [
-  { id: "morning", label: "Morning", time: "9 – 12" },
-  { id: "afternoon", label: "Afternoon", time: "12 – 4" },
-  { id: "evening", label: "Evening", time: "4 – 7" },
+  { id: "morning", label: "Morning", time: "9 – 12", icon: Sun, slots: 2, color: "bg-amber-50 text-amber-500" },
+  { id: "afternoon", label: "Afternoon", time: "12 – 4", icon: CloudSun, slots: 4, tag: "Next available", color: "bg-sky-50 text-sky-500" },
+  { id: "evening", label: "Evening", time: "4 – 7", icon: Sunset, slots: 1, color: "bg-violet-50 text-violet-500" },
 ];
 
 const STEP_LABELS = ["Service", "Car Type", "Add-ons", "Schedule", "Location", "Confirm"];
@@ -442,12 +443,29 @@ const BookingApp = () => {
           {/* ══════ STEP 3: Schedule ══════ */}
           {step === 3 && (
             <motion.div key="s3" custom={dir} variants={slideVariants} initial="enter" animate="center" exit="exit" transition={ease}
-              className="flex-1 max-w-lg mx-auto w-full px-5 pt-6 pb-32">
-              <StepHeader title="When works for you?" sub="Pick a date and time slot" />
+              className="flex-1 max-w-lg mx-auto w-full px-5 pt-6 pb-32"
+              onAnimationComplete={() => {
+                // Auto-select tomorrow + next available slot on first visit
+                if (!booking.date) {
+                  const tomorrow = dateOptions[0];
+                  const nextSlot = WINDOWS.find((w) => w.tag) || WINDOWS[0];
+                  setBooking((b) => ({ ...b, date: tomorrow, window: nextSlot.id }));
+                }
+              }}>
 
+              {/* Urgency banner */}
+              <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}
+                className="flex items-center gap-2 bg-warning-muted rounded-xl px-3.5 py-2.5 mb-5">
+                <AlertCircle size={14} className="text-warning shrink-0" />
+                <span className="text-xs font-semibold text-foreground">Limited slots available today — book now to secure your spot</span>
+              </motion.div>
+
+              <StepHeader title="When works for you?" sub="We've pre-selected the best option" />
+
+              {/* Date chips */}
               <div className="mt-5 mb-6">
-                <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3 flex items-center gap-1.5">
-                  <CalendarIcon size={12} /> Date
+                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3 flex items-center gap-1.5">
+                  <CalendarIcon size={11} /> Select date
                 </p>
                 <div className="flex gap-2 overflow-x-auto pb-2 -mx-5 px-5 scrollbar-hide">
                   {dateOptions.map((d, i) => {
@@ -457,9 +475,14 @@ const BookingApp = () => {
                         transition={{ delay: 0.03 + i * 0.02 }} whileTap={{ scale: 0.95 }}
                         onClick={() => setBooking({ ...booking, date: d })}
                         className={cn(
-                          "flex flex-col items-center min-w-[56px] py-2.5 px-2 rounded-xl transition-all shrink-0",
-                          isSelected ? "bg-foreground text-background ring-2 ring-foreground" : "bg-card ring-1 ring-border"
+                          "flex flex-col items-center min-w-[58px] py-2.5 px-2 rounded-xl transition-all shrink-0 relative",
+                          isSelected ? "bg-foreground text-background ring-2 ring-foreground shadow-[var(--shadow-glow)]" : "bg-card ring-1 ring-border"
                         )}>
+                        {i === 0 && !isSelected && (
+                          <span className="absolute -top-1.5 left-1/2 -translate-x-1/2 text-[7px] font-bold uppercase bg-success text-success-foreground px-1.5 py-0.5 rounded-full whitespace-nowrap">
+                            Best
+                          </span>
+                        )}
                         <span className={cn("text-[10px] font-bold uppercase", isSelected ? "text-background/70" : "text-muted-foreground")}>
                           {i === 0 ? "TMR" : format(d, "EEE")}
                         </span>
@@ -475,28 +498,56 @@ const BookingApp = () => {
                 </div>
               </div>
 
+              {/* Time slots */}
               <div>
-                <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3 flex items-center gap-1.5">
-                  <Clock size={12} /> Time
+                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3 flex items-center gap-1.5">
+                  <Clock size={11} /> Choose a time slot
                 </p>
                 <div className="space-y-2.5">
                   {WINDOWS.map((w, i) => {
                     const isSelected = booking.window === w.id;
+                    const WIcon = w.icon;
+                    const isLow = w.slots <= 2;
                     return (
                       <motion.button key={w.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.1 + i * 0.05 }} whileTap={{ scale: 0.98 }}
+                        transition={{ delay: 0.1 + i * 0.06 }} whileTap={{ scale: 0.98 }}
                         onClick={() => setBooking({ ...booking, window: w.id })}
                         className={cn(
-                          "w-full rounded-xl p-4 flex items-center gap-3 transition-all",
-                          isSelected ? "bg-foreground text-background ring-2 ring-foreground" : "bg-card ring-1 ring-border"
+                          "w-full rounded-2xl p-4 flex items-center gap-3.5 transition-all duration-200 relative overflow-hidden",
+                          isSelected
+                            ? "bg-foreground text-background ring-2 ring-foreground shadow-[var(--shadow-glow)]"
+                            : "bg-card ring-1 ring-border"
                         )}>
-                        <div className={cn("w-9 h-9 rounded-lg flex items-center justify-center",
-                          isSelected ? "bg-background/15" : "bg-muted")}>
-                          <Clock size={15} className={isSelected ? "text-background" : "text-muted-foreground"} />
+                        <div className={cn(
+                          "w-11 h-11 rounded-xl flex items-center justify-center shrink-0 transition-colors",
+                          isSelected ? "bg-background/15" : w.color
+                        )}>
+                          <WIcon size={20} className={isSelected ? "text-background" : ""} />
                         </div>
-                        <div className="text-left">
-                          <span className={cn("font-bold text-sm block", isSelected ? "text-background" : "text-foreground")}>{w.label}</span>
+                        <div className="flex-1 text-left min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className={cn("font-bold text-sm", isSelected ? "text-background" : "text-foreground")}>{w.label}</span>
+                            {w.tag && (
+                              <span className={cn(
+                                "text-[8px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full",
+                                isSelected ? "bg-background/20 text-background" : "bg-foreground text-background"
+                              )}>{w.tag}</span>
+                            )}
+                          </div>
                           <span className={cn("text-xs", isSelected ? "text-background/70" : "text-muted-foreground")}>{w.time}</span>
+                        </div>
+                        <div className="flex flex-col items-end gap-1 shrink-0">
+                          <span className={cn(
+                            "text-[11px] font-semibold px-2 py-0.5 rounded-full",
+                            isSelected
+                              ? "bg-background/15 text-background"
+                              : isLow
+                                ? "bg-destructive/10 text-destructive"
+                                : "bg-success/10 text-success"
+                          )}>
+                            {w.slots} slot{w.slots !== 1 ? "s" : ""} left
+                          </span>
+                          <RadioDot selected={isSelected} inverted={isSelected} />
                         </div>
                       </motion.button>
                     );
@@ -778,10 +829,12 @@ const StepHeader = ({ title, sub }: { title: string; sub: string }) => (
   </header>
 );
 
-const RadioDot = ({ selected }: { selected: boolean }) => (
+const RadioDot = ({ selected, inverted }: { selected: boolean; inverted?: boolean }) => (
   <div className={cn(
     "w-5 h-5 rounded-full flex items-center justify-center transition-all",
-    selected ? "bg-foreground text-background" : "border-2 border-border"
+    selected
+      ? inverted ? "bg-background text-foreground" : "bg-foreground text-background"
+      : "border-2 border-border"
   )}>
     {selected && (
       <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", stiffness: 500, damping: 20 }}>
