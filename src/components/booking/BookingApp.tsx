@@ -113,12 +113,30 @@ const BookingApp = () => {
     scrollRef.current?.scrollTo({ top: 0, behavior: "instant" });
   }, [step]);
 
+  const validateStep4 = useCallback((): boolean => {
+    const errors: Record<string, string> = {};
+    const name = booking.name.trim();
+    const phone = booking.phone.replace(/\s/g, "");
+    const postcode = booking.postcode.trim();
+    const address = booking.address.trim();
+
+    if (name.length < 2) errors.name = "Name must be at least 2 characters";
+    if (!/^07\d{9}$/.test(phone)) errors.phone = "Enter a valid UK mobile (07XXXXXXXXX)";
+    if (!/^[A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2}$/i.test(postcode)) errors.postcode = "Enter a valid UK postcode";
+    if (!address) errors.address = "Address is required";
+
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
+  }, [booking.name, booking.phone, booking.postcode, booking.address]);
+
   const next = useCallback(() => {
+    if (step === 4 && !validateStep4()) return;
     clearTimeout(autoAdvanceTimer.current);
+    setFieldErrors({});
     setDir(1);
     setStep((s) => Math.min(s + 1, TOTAL_STEPS - 1));
     scrollRef.current?.scrollTo({ top: 0, behavior: "instant" });
-  }, []);
+  }, [step, validateStep4]);
 
   const back = useCallback(() => {
     setDir(-1);
