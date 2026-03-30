@@ -97,6 +97,7 @@ const BookingApp = () => {
     service: null, carType: null, addons: [], plan: "weekly" as PlanType, date: undefined,
     window: "", name: "", phone: "", address: "", postcode: "",
   });
+  const [defaultBusinessId, setDefaultBusinessId] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const autoAdvanceTimer = useRef<ReturnType<typeof setTimeout>>();
 
