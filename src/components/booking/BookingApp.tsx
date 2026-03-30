@@ -106,7 +106,7 @@ const BookingApp = () => {
       .then(({ data }) => { if (data) setDefaultBusinessId(data.id); });
   }, []);
 
-
+  const goTo = useCallback((to: number) => {
     setDir(to > step ? 1 : -1);
     setStep(to);
     scrollRef.current?.scrollTo({ top: 0, behavior: "instant" });
