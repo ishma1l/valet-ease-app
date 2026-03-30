@@ -100,6 +100,7 @@ const BookingApp = () => {
   });
   const [defaultBusinessId, setDefaultBusinessId] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [geoLoading, setGeoLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const autoAdvanceTimer = useRef<ReturnType<typeof setTimeout>>();
 
