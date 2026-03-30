@@ -32,8 +32,11 @@ const CHART_COLORS = [
 
 type Tab = "analytics" | "bookings";
 
+type Worker = { id: string; full_name: string | null; email: string | null };
+
 const AdminDashboard = () => {
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [workers, setWorkers] = useState<Worker[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [tab, setTab] = useState<Tab>("analytics");
@@ -49,14 +52,27 @@ const AdminDashboard = () => {
     setRefreshing(false);
   };
 
+  const fetchWorkers = async () => {
+    const { data } = await supabase.rpc("get_workers");
+    setWorkers((data as Worker[]) || []);
+  };
+
   useEffect(() => {
     fetchBookings();
+    fetchWorkers();
   }, []);
 
   const updateStatus = async (id: string, status: BookingStatus) => {
     await supabase.from("bookings").update({ status }).eq("id", id);
     setBookings((prev) =>
       prev.map((b) => (b.id === id ? { ...b, status } : b))
+    );
+  };
+
+  const assignWorker = async (bookingId: string, workerId: string | null) => {
+    await supabase.from("bookings").update({ assigned_worker_id: workerId } as any).eq("id", bookingId);
+    setBookings((prev) =>
+      prev.map((b) => (b.id === bookingId ? { ...b, assigned_worker_id: workerId } as any : b))
     );
   };
 
@@ -188,7 +204,7 @@ const AdminDashboard = () => {
         ) : tab === "analytics" ? (
           <AnalyticsView analytics={analytics} bookings={bookings} CustomTooltip={CustomTooltip} />
         ) : (
-          <BookingsView bookings={bookings} updateStatus={updateStatus} />
+          <BookingsView bookings={bookings} updateStatus={updateStatus} workers={workers} assignWorker={assignWorker} />
         )}
       </main>
     </div>
@@ -343,7 +359,7 @@ const AnalyticsView = ({ analytics, bookings, CustomTooltip }: {
 };
 
 // ── Bookings Tab ──
-const BookingsView = ({ bookings, updateStatus }: { bookings: Booking[]; updateStatus: (id: string, s: BookingStatus) => void }) => {
+const BookingsView = ({ bookings, updateStatus, workers, assignWorker }: { bookings: Booking[]; updateStatus: (id: string, s: BookingStatus) => void; workers: Worker[]; assignWorker: (bookingId: string, workerId: string | null) => void }) => {
   if (bookings.length === 0) {
     return (
       <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
@@ -447,6 +463,25 @@ const BookingsView = ({ bookings, updateStatus }: { bookings: Booking[]; updateS
                   </motion.button>
                 );
               })}
+            </div>
+            {/* Worker assignment */}
+            <div className="flex items-center gap-3 pt-2 border-t border-muted">
+              <div className="flex items-center gap-1.5 text-muted-foreground shrink-0">
+                <User size={13} />
+                <span className="text-[10px] font-bold uppercase tracking-wider">Assign worker</span>
+              </div>
+              <select
+                value={(b as any).assigned_worker_id || ""}
+                onChange={(e) => assignWorker(b.id, e.target.value || null)}
+                className="flex-1 h-9 px-3 rounded-xl border border-border bg-card text-sm font-medium focus:ring-2 focus:ring-ring focus:border-transparent outline-none transition-all appearance-none cursor-pointer"
+              >
+                <option value="">Unassigned</option>
+                {workers.map((w) => (
+                  <option key={w.id} value={w.id}>
+                    {w.full_name || w.email || "Unknown"}
+                  </option>
+                ))}
+              </select>
             </div>
           </motion.div>
         ))}
