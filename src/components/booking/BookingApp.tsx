@@ -324,7 +324,9 @@ const BookingApp = () => {
           </div>
         </motion.div>
 
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.8 }}
+        {/* Before & After Photos */}
+        {confirmedBookingId && <JobPhotosCustomerView bookingId={confirmedBookingId} />}
+
           className="flex items-center gap-2 justify-center text-xs text-muted-foreground mt-4">
           <Shield size={13} className="text-emerald-500" />
           <span>Fully insured · Free cancellation · Secure booking</span>
