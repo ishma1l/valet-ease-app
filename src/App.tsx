@@ -7,6 +7,7 @@ import { NotificationToast } from "@/components/notifications/NotificationCenter
 import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import AdminDashboard from "./pages/AdminDashboard.tsx";
+import { AdminGuard } from "@/components/AdminGuard";
 import WorkerDashboard from "./pages/WorkerDashboard.tsx";
 import Auth from "./pages/Auth.tsx";
 import BusinessDashboard from "./pages/BusinessDashboard.tsx";
