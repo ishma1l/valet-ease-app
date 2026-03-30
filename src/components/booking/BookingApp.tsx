@@ -13,7 +13,7 @@ import {
   Shield, ShieldCheck, Check, Plus,
   Droplets, Car, LocateFixed, Navigation,
   Wind, Paintbrush, SprayCan, Armchair, Home,
-  Sun, CloudSun, Sunset, AlertCircle, Loader2,
+  Sun, CloudSun, Sunset, AlertCircle, Loader2, XCircle,
 } from "lucide-react";
 import carIllustration from "@/assets/car-illustration.png";
 import carSmall from "@/assets/car-small.png";
@@ -335,11 +335,14 @@ const BookingApp = () => {
         </motion.div>
 
         <motion.div initial={{ y: 12, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.85 }}
-          className="mt-6">
+          className="mt-6 space-y-3">
           <motion.button whileTap={{ scale: 0.97 }} onClick={reset}
             className="w-full bg-foreground text-background font-bold text-[15px] h-14 rounded-2xl flex items-center justify-center gap-2 active:scale-[0.97] transition-transform">
             Book Another Wash <ChevronRight size={16} />
           </motion.button>
+          {confirmedBookingId && (
+            <CancelBookingButton bookingId={confirmedBookingId} onCancelled={reset} />
+          )}
         </motion.div>
       </div>
     );
@@ -1261,6 +1264,55 @@ const RadioDot = ({ selected, inverted }: { selected: boolean; inverted?: boolea
     )}
   </div>
 );
+
+/* ─── Cancel Booking Button ─── */
+const CancelBookingButton = ({ bookingId, onCancelled }: { bookingId: string; onCancelled: () => void }) => {
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
+
+  const handleCancel = async () => {
+    setCancelling(true);
+    const { error } = await supabase.from("bookings").update({ status: "cancelled" as any }).eq("id", bookingId);
+    setCancelling(false);
+    if (error) {
+      toast.error("Failed to cancel booking");
+      return;
+    }
+    toast.success("Booking cancelled successfully");
+    setShowConfirm(false);
+    onCancelled();
+  };
+
+  if (showConfirm) {
+    return (
+      <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
+        className="rounded-2xl ring-1 ring-destructive/30 bg-destructive/5 p-4 space-y-3">
+        <div className="flex items-center gap-2">
+          <XCircle size={16} className="text-destructive shrink-0" />
+          <p className="text-sm font-bold text-foreground">Cancel this booking?</p>
+        </div>
+        <p className="text-xs text-muted-foreground">This action cannot be undone. Your booking will be cancelled immediately.</p>
+        <div className="flex gap-2">
+          <motion.button whileTap={{ scale: 0.97 }} onClick={() => setShowConfirm(false)}
+            className="flex-1 h-10 rounded-xl bg-muted text-foreground font-bold text-xs">
+            Keep Booking
+          </motion.button>
+          <motion.button whileTap={{ scale: 0.97 }} onClick={handleCancel} disabled={cancelling}
+            className="flex-1 h-10 rounded-xl bg-destructive text-destructive-foreground font-bold text-xs flex items-center justify-center gap-1.5 disabled:opacity-50">
+            {cancelling ? <Loader2 size={14} className="animate-spin" /> : <><XCircle size={13} /> Yes, Cancel</>}
+          </motion.button>
+        </div>
+      </motion.div>
+    );
+  }
+
+  return (
+    <motion.button whileTap={{ scale: 0.97 }} onClick={() => setShowConfirm(true)}
+      className="w-full h-11 rounded-2xl text-destructive font-semibold text-sm flex items-center justify-center gap-2 hover:bg-destructive/5 transition-colors">
+      <XCircle size={15} /> Cancel Booking
+    </motion.button>
+  );
+};
 
 interface InputFieldProps {
   icon: typeof MapPin;

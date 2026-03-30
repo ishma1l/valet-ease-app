@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, Clock, MapPin, Car, Phone, User, Calendar,
   Zap, Inbox, Loader2, RefreshCw, CheckCircle2, CircleDot, Truck,
-  TrendingUp, PoundSterling, Users, BarChart3,
+  TrendingUp, PoundSterling, Users, BarChart3, XCircle,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import {
@@ -20,6 +20,7 @@ const STATUS_CONFIG: Record<BookingStatus, { color: string; icon: typeof CircleD
   pending: { color: "bg-warning-muted text-foreground ring-warning/30", icon: CircleDot, label: "Pending" },
   assigned: { color: "bg-accent text-accent-foreground ring-primary/30", icon: Truck, label: "Assigned" },
   completed: { color: "bg-success-muted text-foreground ring-success/30", icon: CheckCircle2, label: "Done" },
+  cancelled: { color: "bg-destructive/10 text-destructive ring-destructive/30", icon: XCircle, label: "Cancelled" },
 };
 
 const CHART_COLORS = [
