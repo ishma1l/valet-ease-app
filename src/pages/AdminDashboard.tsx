@@ -32,8 +32,11 @@ const CHART_COLORS = [
 
 type Tab = "analytics" | "bookings";
 
+type Worker = { id: string; full_name: string | null; email: string | null };
+
 const AdminDashboard = () => {
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [workers, setWorkers] = useState<Worker[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [tab, setTab] = useState<Tab>("analytics");
@@ -49,14 +52,27 @@ const AdminDashboard = () => {
     setRefreshing(false);
   };
 
+  const fetchWorkers = async () => {
+    const { data } = await supabase.rpc("get_workers");
+    setWorkers((data as Worker[]) || []);
+  };
+
   useEffect(() => {
     fetchBookings();
+    fetchWorkers();
   }, []);
 
   const updateStatus = async (id: string, status: BookingStatus) => {
     await supabase.from("bookings").update({ status }).eq("id", id);
     setBookings((prev) =>
       prev.map((b) => (b.id === id ? { ...b, status } : b))
+    );
+  };
+
+  const assignWorker = async (bookingId: string, workerId: string | null) => {
+    await supabase.from("bookings").update({ assigned_worker_id: workerId } as any).eq("id", bookingId);
+    setBookings((prev) =>
+      prev.map((b) => (b.id === bookingId ? { ...b, assigned_worker_id: workerId } as any : b))
     );
   };
 
