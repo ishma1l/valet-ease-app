@@ -1487,18 +1487,20 @@ const LiveTracking = ({ booking, svc, carType, total, baseTotal, discountPct, ac
               <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3">Your cleaner</p>
               <div className="flex items-center gap-3.5">
                 <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center text-foreground font-bold text-lg">
-                  JM
+                  {initials || <Loader2 size={18} className="animate-spin text-muted-foreground" />}
                 </div>
                 <div className="flex-1">
-                  <p className="font-bold text-sm text-foreground">James M.</p>
+                  <p className="font-bold text-sm text-foreground">{workerName || "Finding your cleaner..."}</p>
+                  {workerName && (
                   <div className="flex items-center gap-1 mt-0.5">
                     <div className="flex">
                       {[...Array(5)].map((_, i) => (
                         <span key={i} className="text-amber-400 text-xs">★</span>
                       ))}
                     </div>
-                    <span className="text-[11px] text-muted-foreground font-medium">4.9 · 342 washes</span>
+                    <span className="text-[11px] text-muted-foreground font-medium">4.9</span>
                   </div>
+                  )}
                 </div>
                 <motion.button whileTap={{ scale: 0.92 }}
                   className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center">
