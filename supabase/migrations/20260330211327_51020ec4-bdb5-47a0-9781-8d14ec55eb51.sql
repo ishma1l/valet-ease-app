@@ -1,0 +1,1 @@
+ALTER TABLE public.bookings ADD COLUMN assigned_worker_id uuid REFERENCES auth.users(id) DEFAULT NULL;

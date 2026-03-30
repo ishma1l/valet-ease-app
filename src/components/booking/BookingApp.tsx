@@ -13,7 +13,7 @@ import {
   Shield, ShieldCheck, Check, Plus,
   Droplets, Car, LocateFixed, Navigation,
   Wind, Paintbrush, SprayCan, Armchair, Home,
-  Sun, CloudSun, Sunset, AlertCircle,
+  Sun, CloudSun, Sunset, AlertCircle, Loader2,
 } from "lucide-react";
 import carIllustration from "@/assets/car-illustration.png";
 import carSmall from "@/assets/car-small.png";
@@ -1235,12 +1235,16 @@ const InputField = ({ icon: Icon, label, placeholder, value, onChange, type = "t
 
 /* ─── Live Tracking Component ─── */
 
-const TRACKING_STAGES = [
-  { id: "confirmed", label: "Booking confirmed", desc: "Your booking has been received", icon: CheckCircle2, eta: null },
-  { id: "assigned", label: "Cleaner assigned", desc: "James M. is preparing for your wash", icon: User, eta: null },
-  { id: "onway", label: "On the way", desc: "James is heading to your location", icon: Navigation, eta: "12 min away" },
-  { id: "arrived", label: "Arrived", desc: "James has arrived — wash starting now", icon: MapPin, eta: null },
-];
+const getTrackingStages = (cleanerName: string | null) => {
+  const name = cleanerName || "Your cleaner";
+  const firstName = name.split(" ")[0];
+  return [
+    { id: "confirmed", label: "Booking confirmed", desc: "Your booking has been received", icon: CheckCircle2, eta: null },
+    { id: "assigned", label: "Cleaner assigned", desc: `${name} is preparing for your wash`, icon: User, eta: null },
+    { id: "onway", label: "On the way", desc: `${firstName} is heading to your location`, icon: Navigation, eta: "12 min away" },
+    { id: "arrived", label: "Arrived", desc: `${firstName} has arrived — wash starting now`, icon: MapPin, eta: null },
+  ];
+};
 
 interface LiveTrackingProps {
   booking: BookingState;
@@ -1259,22 +1263,45 @@ interface LiveTrackingProps {
 const LiveTracking = ({ booking, svc, carType, total, baseTotal, discountPct, activePlan, servicePrice, addonsTotal, onReset }: LiveTrackingProps) => {
   const [stageIdx, setStageIdx] = useState(0);
   const [eta, setEta] = useState(18);
+  const [workerName, setWorkerName] = useState<string | null>(null);
   const selectedAddons = ADDONS.filter((a) => booking.addons.includes(a.id));
 
   // Simulate stage progression with notifications
   useEffect(() => {
     const timers = [
-      setTimeout(() => {
+      setTimeout(async () => {
+        // In a real app, this would be triggered by a realtime subscription on booking status change
+        // For now we simulate and attempt to fetch the assigned worker
         setStageIdx(1);
-        pushNotification({ title: "Cleaner assigned", body: "James M. has been assigned to your wash and is getting ready.", icon: "assigned" });
+        // Try fetching assigned worker from the most recent booking
+        const { data } = await supabase
+          .from("bookings")
+          .select("assigned_worker_id")
+          .eq("customer_name", booking.name)
+          .eq("status", "assigned" as any)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (data?.assigned_worker_id) {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("full_name")
+            .eq("id", data.assigned_worker_id)
+            .maybeSingle();
+          if (profile?.full_name) setWorkerName(profile.full_name);
+        }
+        const name = workerName || "A cleaner";
+        pushNotification({ title: "Cleaner assigned", body: `${name} has been assigned to your wash and is getting ready.`, icon: "assigned" });
       }, 3000),
       setTimeout(() => {
         setStageIdx(2);
-        pushNotification({ title: "On the way!", body: "James is heading to your location. Estimated arrival: 18 min.", icon: "onway" });
+        const firstName = workerName?.split(" ")[0] || "Your cleaner";
+        pushNotification({ title: "On the way!", body: `${firstName} is heading to your location. Estimated arrival: 18 min.`, icon: "onway" });
       }, 7000),
       setTimeout(() => {
         setStageIdx(3);
-        pushNotification({ title: "Cleaner arrived", body: "James has arrived at your location. Your wash is starting now!", icon: "arrived" });
+        const firstName = workerName?.split(" ")[0] || "Your cleaner";
+        pushNotification({ title: "Cleaner arrived", body: `${firstName} has arrived at your location. Your wash is starting now!`, icon: "arrived" });
       }, 15000),
     ];
     return () => timers.forEach(clearTimeout);
@@ -1290,8 +1317,10 @@ const LiveTracking = ({ booking, svc, carType, total, baseTotal, discountPct, ac
     return () => clearInterval(interval);
   }, [stageIdx]);
 
-  const currentStage = TRACKING_STAGES[stageIdx];
+  const trackingStages = getTrackingStages(workerName);
+  const currentStage = trackingStages[stageIdx];
   const CurIcon = currentStage.icon;
+  const initials = workerName ? workerName.split(" ").map(n => n[0]).join("").toUpperCase() : null;
 
   return (
     <div className="min-h-svh bg-background flex flex-col max-w-lg mx-auto w-full">
@@ -1390,7 +1419,7 @@ const LiveTracking = ({ booking, svc, carType, total, baseTotal, discountPct, ac
 
         {/* Progress timeline */}
         <div className="space-y-0 mb-6">
-          {TRACKING_STAGES.map((stage, i) => {
+          {trackingStages.map((stage, i) => {
             const completed = i < stageIdx;
             const active = i === stageIdx;
             const upcoming = i > stageIdx;
@@ -1410,7 +1439,7 @@ const LiveTracking = ({ booking, svc, carType, total, baseTotal, discountPct, ac
                     )}>
                     {completed ? <Check size={14} strokeWidth={3} /> : <SIcon size={14} />}
                   </motion.div>
-                  {i < TRACKING_STAGES.length - 1 && (
+                  {i < trackingStages.length - 1 && (
                     <div className="w-0.5 flex-1 min-h-[32px] relative overflow-hidden bg-border rounded-full my-1">
                       <motion.div
                         className="absolute top-0 left-0 w-full bg-emerald-500 rounded-full"
@@ -1458,18 +1487,20 @@ const LiveTracking = ({ booking, svc, carType, total, baseTotal, discountPct, ac
               <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3">Your cleaner</p>
               <div className="flex items-center gap-3.5">
                 <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center text-foreground font-bold text-lg">
-                  JM
+                  {initials || <Loader2 size={18} className="animate-spin text-muted-foreground" />}
                 </div>
                 <div className="flex-1">
-                  <p className="font-bold text-sm text-foreground">James M.</p>
+                  <p className="font-bold text-sm text-foreground">{workerName || "Finding your cleaner..."}</p>
+                  {workerName && (
                   <div className="flex items-center gap-1 mt-0.5">
                     <div className="flex">
                       {[...Array(5)].map((_, i) => (
                         <span key={i} className="text-amber-400 text-xs">★</span>
                       ))}
                     </div>
-                    <span className="text-[11px] text-muted-foreground font-medium">4.9 · 342 washes</span>
+                    <span className="text-[11px] text-muted-foreground font-medium">4.9</span>
                   </div>
+                  )}
                 </div>
                 <motion.button whileTap={{ scale: 0.92 }}
                   className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center">
