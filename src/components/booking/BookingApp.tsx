@@ -1220,16 +1220,21 @@ interface InputFieldProps {
   value: string;
   onChange: (v: string) => void;
   type?: string;
+  error?: string;
 }
 
-const InputField = ({ icon: Icon, label, placeholder, value, onChange, type = "text" }: InputFieldProps) => (
+const InputField = ({ icon: Icon, label, placeholder, value, onChange, type = "text", error }: InputFieldProps) => (
   <div className="space-y-1.5">
     <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
       <Icon size={11} /> {label}
     </label>
     <input type={type} placeholder={placeholder}
-      className="w-full bg-card rounded-2xl px-4 h-13 text-sm font-medium placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-foreground/10 ring-1 ring-border transition-all"
+      className={cn(
+        "w-full bg-card rounded-2xl px-4 h-13 text-sm font-medium placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-foreground/10 ring-1 transition-all",
+        error ? "ring-destructive" : "ring-border"
+      )}
       value={value} onChange={(e) => onChange(e.target.value)} />
+    {error && <p className="text-[11px] text-destructive font-medium">{error}</p>}
   </div>
 );
 
