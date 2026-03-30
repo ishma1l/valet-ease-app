@@ -98,6 +98,7 @@ const BookingApp = () => {
     window: "", name: "", phone: "", address: "", postcode: "",
   });
   const [defaultBusinessId, setDefaultBusinessId] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const scrollRef = useRef<HTMLDivElement>(null);
   const autoAdvanceTimer = useRef<ReturnType<typeof setTimeout>>();
 
@@ -112,12 +113,30 @@ const BookingApp = () => {
     scrollRef.current?.scrollTo({ top: 0, behavior: "instant" });
   }, [step]);
 
+  const validateStep4 = useCallback((): boolean => {
+    const errors: Record<string, string> = {};
+    const name = booking.name.trim();
+    const phone = booking.phone.replace(/\s/g, "");
+    const postcode = booking.postcode.trim();
+    const address = booking.address.trim();
+
+    if (name.length < 2) errors.name = "Name must be at least 2 characters";
+    if (!/^07\d{9}$/.test(phone)) errors.phone = "Enter a valid UK mobile (07XXXXXXXXX)";
+    if (!/^[A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2}$/i.test(postcode)) errors.postcode = "Enter a valid UK postcode";
+    if (!address) errors.address = "Address is required";
+
+    setFieldErrors(errors);
+    return Object.keys(errors).length === 0;
+  }, [booking.name, booking.phone, booking.postcode, booking.address]);
+
   const next = useCallback(() => {
+    if (step === 4 && !validateStep4()) return;
     clearTimeout(autoAdvanceTimer.current);
+    setFieldErrors({});
     setDir(1);
     setStep((s) => Math.min(s + 1, TOTAL_STEPS - 1));
     scrollRef.current?.scrollTo({ top: 0, behavior: "instant" });
-  }, []);
+  }, [step, validateStep4]);
 
   const back = useCallback(() => {
     setDir(-1);
@@ -994,15 +1013,19 @@ const BookingApp = () => {
                 className="space-y-4">
                 <div className="grid grid-cols-2 gap-3">
                   <InputField icon={MapPin} label="Postcode" placeholder="SW1A 1AA" value={booking.postcode}
-                    onChange={(v) => setBooking({ ...booking, postcode: v.toUpperCase() })} />
+                    onChange={(v) => { setBooking({ ...booking, postcode: v.toUpperCase() }); setFieldErrors((e) => ({ ...e, postcode: "" })); }}
+                    error={fieldErrors.postcode} />
                   <InputField icon={Home} label="Address" placeholder="10 Downing St" value={booking.address}
-                    onChange={(v) => setBooking({ ...booking, address: v })} />
+                    onChange={(v) => { setBooking({ ...booking, address: v }); setFieldErrors((e) => ({ ...e, address: "" })); }}
+                    error={fieldErrors.address} />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <InputField icon={User} label="Full name" placeholder="John Smith" value={booking.name}
-                    onChange={(v) => setBooking({ ...booking, name: v })} />
+                    onChange={(v) => { setBooking({ ...booking, name: v }); setFieldErrors((e) => ({ ...e, name: "" })); }}
+                    error={fieldErrors.name} />
                   <InputField icon={Phone} label="Phone" placeholder="07XXX XXX XXX" type="tel" value={booking.phone}
-                    onChange={(v) => setBooking({ ...booking, phone: v })} />
+                    onChange={(v) => { setBooking({ ...booking, phone: v }); setFieldErrors((e) => ({ ...e, phone: "" })); }}
+                    error={fieldErrors.phone} />
                 </div>
               </motion.div>
 
@@ -1220,16 +1243,21 @@ interface InputFieldProps {
   value: string;
   onChange: (v: string) => void;
   type?: string;
+  error?: string;
 }
 
-const InputField = ({ icon: Icon, label, placeholder, value, onChange, type = "text" }: InputFieldProps) => (
+const InputField = ({ icon: Icon, label, placeholder, value, onChange, type = "text", error }: InputFieldProps) => (
   <div className="space-y-1.5">
     <label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
       <Icon size={11} /> {label}
     </label>
     <input type={type} placeholder={placeholder}
-      className="w-full bg-card rounded-2xl px-4 h-13 text-sm font-medium placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-foreground/10 ring-1 ring-border transition-all"
+      className={cn(
+        "w-full bg-card rounded-2xl px-4 h-13 text-sm font-medium placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-foreground/10 ring-1 transition-all",
+        error ? "ring-destructive" : "ring-border"
+      )}
       value={value} onChange={(e) => onChange(e.target.value)} />
+    {error && <p className="text-[11px] text-destructive font-medium">{error}</p>}
   </div>
 );
 
