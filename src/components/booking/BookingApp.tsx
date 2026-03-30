@@ -1013,15 +1013,19 @@ const BookingApp = () => {
                 className="space-y-4">
                 <div className="grid grid-cols-2 gap-3">
                   <InputField icon={MapPin} label="Postcode" placeholder="SW1A 1AA" value={booking.postcode}
-                    onChange={(v) => setBooking({ ...booking, postcode: v.toUpperCase() })} />
+                    onChange={(v) => { setBooking({ ...booking, postcode: v.toUpperCase() }); setFieldErrors((e) => ({ ...e, postcode: "" })); }}
+                    error={fieldErrors.postcode} />
                   <InputField icon={Home} label="Address" placeholder="10 Downing St" value={booking.address}
-                    onChange={(v) => setBooking({ ...booking, address: v })} />
+                    onChange={(v) => { setBooking({ ...booking, address: v }); setFieldErrors((e) => ({ ...e, address: "" })); }}
+                    error={fieldErrors.address} />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <InputField icon={User} label="Full name" placeholder="John Smith" value={booking.name}
-                    onChange={(v) => setBooking({ ...booking, name: v })} />
+                    onChange={(v) => { setBooking({ ...booking, name: v }); setFieldErrors((e) => ({ ...e, name: "" })); }}
+                    error={fieldErrors.name} />
                   <InputField icon={Phone} label="Phone" placeholder="07XXX XXX XXX" type="tel" value={booking.phone}
-                    onChange={(v) => setBooking({ ...booking, phone: v })} />
+                    onChange={(v) => { setBooking({ ...booking, phone: v }); setFieldErrors((e) => ({ ...e, phone: "" })); }}
+                    error={fieldErrors.phone} />
                 </div>
               </motion.div>
 
