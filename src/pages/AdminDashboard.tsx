@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, Clock, MapPin, Car, Phone, User, Calendar,
   Zap, Inbox, Loader2, RefreshCw, CheckCircle2, CircleDot, Truck,
-  TrendingUp, PoundSterling, Users, BarChart3,
+  TrendingUp, PoundSterling, Users, BarChart3, XCircle,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import {
