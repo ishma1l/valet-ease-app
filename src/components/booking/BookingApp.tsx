@@ -92,6 +92,7 @@ const BookingApp = () => {
   const [dir, setDir] = useState(1);
   const [submitting, setSubmitting] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
+  const [confirmedBookingId, setConfirmedBookingId] = useState<string | null>(null);
   const [showAllDates, setShowAllDates] = useState(false);
   const [booking, setBooking] = useState<BookingState>({
     service: null, carType: null, addons: [], plan: "weekly" as PlanType, date: undefined,
@@ -173,7 +174,7 @@ const BookingApp = () => {
 
   const confirm = async () => {
     setSubmitting(true);
-    const { error } = await supabase.from("bookings").insert({
+    const { data, error } = await supabase.from("bookings").insert({
       customer_name: booking.name,
       phone: booking.phone,
       address: booking.address,
@@ -185,9 +186,10 @@ const BookingApp = () => {
       express: false,
       total_price: total,
       business_id: defaultBusinessId,
-    });
+    }).select("id").single();
     setSubmitting(false);
     if (error) { toast.error("Booking failed. Please try again."); return; }
+    if (data) setConfirmedBookingId(data.id);
     pushNotification({
       title: "Booking confirmed!",
       body: `Your ${svc?.title} is booked for ${booking.date ? format(booking.date, "EEE, d MMM") : ""}. We'll find a cleaner shortly.`,
@@ -321,6 +323,9 @@ const BookingApp = () => {
             )}
           </div>
         </motion.div>
+
+        {/* Before & After Photos */}
+        {confirmedBookingId && <JobPhotosCustomerView bookingId={confirmedBookingId} />}
 
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.8 }}
           className="flex items-center gap-2 justify-center text-xs text-muted-foreground mt-4">
@@ -1285,10 +1290,11 @@ interface LiveTrackingProps {
   activePlan: typeof PLANS[number];
   servicePrice: number;
   addonsTotal: number;
+  confirmedBookingId?: string | null;
   onReset: () => void;
 }
 
-const LiveTracking = ({ booking, svc, carType, total, baseTotal, discountPct, activePlan, servicePrice, addonsTotal, onReset }: LiveTrackingProps) => {
+const LiveTracking = ({ booking, svc, carType, total, baseTotal, discountPct, activePlan, servicePrice, addonsTotal, confirmedBookingId, onReset }: LiveTrackingProps) => {
   const [stageIdx, setStageIdx] = useState(0);
   const [eta, setEta] = useState(18);
   const [workerName, setWorkerName] = useState<string | null>(null);
@@ -1540,7 +1546,7 @@ const LiveTracking = ({ booking, svc, carType, total, baseTotal, discountPct, ac
         </AnimatePresence>
 
         {/* Before & After Photos (customer view) */}
-        <JobPhotosCustomerView bookingId={booking.service ? undefined : undefined} />
+        {confirmedBookingId && <JobPhotosCustomerView bookingId={confirmedBookingId} />}
 
         {/* Booking summary card */}
         <div className="rounded-2xl ring-1 ring-border bg-card overflow-hidden mb-5">
