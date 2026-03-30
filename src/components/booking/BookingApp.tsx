@@ -1419,7 +1419,7 @@ const LiveTracking = ({ booking, svc, carType, total, baseTotal, discountPct, ac
 
         {/* Progress timeline */}
         <div className="space-y-0 mb-6">
-          {TRACKING_STAGES.map((stage, i) => {
+          {trackingStages.map((stage, i) => {
             const completed = i < stageIdx;
             const active = i === stageIdx;
             const upcoming = i > stageIdx;
