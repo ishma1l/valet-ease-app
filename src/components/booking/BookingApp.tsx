@@ -100,6 +100,7 @@ const BookingApp = () => {
   });
   const [defaultBusinessId, setDefaultBusinessId] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [geoLoading, setGeoLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const autoAdvanceTimer = useRef<ReturnType<typeof setTimeout>>();
 
@@ -991,24 +992,44 @@ const BookingApp = () => {
               <div className="flex gap-2.5 mt-4 mb-5">
                 <motion.button initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
                   whileTap={{ scale: 0.96 }}
-                  onClick={() => {
-                    if (navigator.geolocation) {
-                      toast.info("Detecting your location…");
-                      navigator.geolocation.getCurrentPosition(
-                        () => {
-                          setBooking((b) => ({ ...b, postcode: "SW1A 1AA", address: "10 Downing Street" }));
-                          toast.success("Location detected!");
-                        },
-                        () => toast.error("Could not detect location")
-                      );
-                    }
+                  onClick={async () => {
+                    if (geoLoading) return;
+                    if (!navigator.geolocation) { toast.error("Geolocation not supported"); return; }
+                    setGeoLoading(true);
+                    toast.info("Detecting your location…");
+                    navigator.geolocation.getCurrentPosition(
+                      async (pos) => {
+                        try {
+                          const { latitude, longitude } = pos.coords;
+                          const res = await fetch(`https://api.postcodes.io/postcodes?lon=${longitude}&lat=${latitude}&limit=1`);
+                          const json = await res.json();
+                          if (json.result && json.result.length > 0) {
+                            const r = json.result[0];
+                            setBooking((b) => ({
+                              ...b,
+                              postcode: r.postcode || "",
+                              address: [r.admin_ward, r.admin_district].filter(Boolean).join(", "),
+                            }));
+                            setFieldErrors((e) => ({ ...e, postcode: "", address: "" }));
+                            toast.success("Location detected!");
+                          } else {
+                            toast.error("Could not find address for your location");
+                          }
+                        } catch {
+                          toast.error("Failed to look up address");
+                        } finally {
+                          setGeoLoading(false);
+                        }
+                      },
+                      () => { toast.error("Could not detect location"); setGeoLoading(false); }
+                    );
                   }}
                   className="flex-1 flex items-center gap-2.5 px-3.5 py-3.5 rounded-2xl bg-accent text-foreground font-semibold text-sm ring-1 ring-border transition-colors active:bg-accent/80">
                   <div className="w-10 h-10 rounded-xl bg-foreground text-background flex items-center justify-center shrink-0">
-                    <LocateFixed size={16} />
+                    {geoLoading ? <Loader2 size={16} className="animate-spin" /> : <LocateFixed size={16} />}
                   </div>
                   <div className="text-left">
-                    <span className="font-bold text-xs block text-foreground">Use GPS</span>
+                    <span className="font-bold text-xs block text-foreground">{geoLoading ? "Detecting…" : "Use GPS"}</span>
                     <span className="text-[10px] text-muted-foreground">Auto-detect</span>
                   </div>
                 </motion.button>
