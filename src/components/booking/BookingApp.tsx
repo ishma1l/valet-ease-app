@@ -1439,7 +1439,7 @@ const LiveTracking = ({ booking, svc, carType, total, baseTotal, discountPct, ac
                     )}>
                     {completed ? <Check size={14} strokeWidth={3} /> : <SIcon size={14} />}
                   </motion.div>
-                  {i < TRACKING_STAGES.length - 1 && (
+                  {i < trackingStages.length - 1 && (
                     <div className="w-0.5 flex-1 min-h-[32px] relative overflow-hidden bg-border rounded-full my-1">
                       <motion.div
                         className="absolute top-0 left-0 w-full bg-emerald-500 rounded-full"
