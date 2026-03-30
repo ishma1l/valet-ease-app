@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Loader2, Mail, Lock, User, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
@@ -12,13 +12,16 @@ const Auth = () => {
   const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const isWorker = searchParams.get("role") === "worker";
 
   useEffect(() => {
+    const redirect = isWorker ? "/worker" : "/dashboard";
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session) navigate("/dashboard");
+      if (session) navigate(redirect);
     });
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) navigate("/dashboard");
+      if (session) navigate(redirect);
     });
     return () => subscription.unsubscribe();
   }, [navigate]);
@@ -55,8 +58,15 @@ const Auth = () => {
         className="w-full max-w-sm">
         <div className="text-center mb-8">
           <h1 className="text-2xl font-extrabold tracking-tight text-foreground">GLOSS.</h1>
+          {isWorker && (
+            <span className="inline-block mt-2 px-3 py-1 rounded-full bg-accent text-accent-foreground text-xs font-bold tracking-wide">
+              WORKER LOGIN
+            </span>
+          )}
           <p className="text-muted-foreground text-sm mt-1">
-            {mode === "login" ? "Sign in to your business dashboard" : "Create your business account"}
+            {isWorker
+              ? "Sign in to access your worker dashboard"
+              : mode === "login" ? "Sign in to your business dashboard" : "Create your business account"}
           </p>
         </div>
 
