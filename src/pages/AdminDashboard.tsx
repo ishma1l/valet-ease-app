@@ -359,7 +359,7 @@ const AnalyticsView = ({ analytics, bookings, CustomTooltip }: {
 };
 
 // ── Bookings Tab ──
-const BookingsView = ({ bookings, updateStatus }: { bookings: Booking[]; updateStatus: (id: string, s: BookingStatus) => void }) => {
+const BookingsView = ({ bookings, updateStatus, workers, assignWorker }: { bookings: Booking[]; updateStatus: (id: string, s: BookingStatus) => void; workers: Worker[]; assignWorker: (bookingId: string, workerId: string | null) => void }) => {
   if (bookings.length === 0) {
     return (
       <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
