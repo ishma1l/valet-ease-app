@@ -204,7 +204,7 @@ const AdminDashboard = () => {
         ) : tab === "analytics" ? (
           <AnalyticsView analytics={analytics} bookings={bookings} CustomTooltip={CustomTooltip} />
         ) : (
-          <BookingsView bookings={bookings} updateStatus={updateStatus} />
+          <BookingsView bookings={bookings} updateStatus={updateStatus} workers={workers} assignWorker={assignWorker} />
         )}
       </main>
     </div>
