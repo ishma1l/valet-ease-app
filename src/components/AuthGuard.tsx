@@ -6,6 +6,8 @@ import { Loader2 } from "lucide-react";
 export const AuthGuard = ({ children }: { children: React.ReactNode }) => {
   const [checking, setChecking] = useState(true);
   const navigate = useNavigate();
+  const location = useLocation();
+  const isWorkerRoute = location.pathname === "/worker";
 
   useEffect(() => {
     const check = async () => {
