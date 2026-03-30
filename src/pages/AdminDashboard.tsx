@@ -60,6 +60,30 @@ const AdminDashboard = () => {
   useEffect(() => {
     fetchBookings();
     fetchWorkers();
+
+    const channel = supabase
+      .channel("admin-bookings")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "bookings" },
+        (payload) => {
+          setBookings((prev) => [payload.new as Booking, ...prev]);
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "bookings" },
+        (payload) => {
+          setBookings((prev) =>
+            prev.map((b) => (b.id === (payload.new as Booking).id ? (payload.new as Booking) : b))
+          );
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const updateStatus = async (id: string, status: BookingStatus) => {
