@@ -13,7 +13,7 @@ export const AuthGuard = ({ children }: { children: React.ReactNode }) => {
     const check = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        navigate("/auth", { replace: true });
+        navigate(isWorkerRoute ? "/auth?role=worker" : "/auth", { replace: true });
         return;
       }
       setChecking(false);
