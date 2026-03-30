@@ -238,6 +238,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      assign_role_on_signup: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: undefined
+      }
       get_workers: {
         Args: never
         Returns: {
