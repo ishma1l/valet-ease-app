@@ -98,7 +98,7 @@ const BookingApp = () => {
     window: "", name: "", phone: "", address: "", postcode: "",
   });
   const [defaultBusinessId, setDefaultBusinessId] = useState<string | null>(null);
-  const scrollRef = useRef<HTMLDivElement>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const autoAdvanceTimer = useRef<ReturnType<typeof setTimeout>>();
 
   useEffect(() => {
