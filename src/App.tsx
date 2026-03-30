@@ -7,6 +7,7 @@ import { NotificationToast } from "@/components/notifications/NotificationCenter
 import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import AdminDashboard from "./pages/AdminDashboard.tsx";
+import { AdminGuard } from "@/components/AdminGuard";
 import WorkerDashboard from "./pages/WorkerDashboard.tsx";
 import Auth from "./pages/Auth.tsx";
 import BusinessDashboard from "./pages/BusinessDashboard.tsx";
@@ -25,7 +26,7 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/dashboard" element={<BusinessDashboard />} />
-          <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/admin" element={<AdminGuard><AdminDashboard /></AdminGuard>} />
           <Route path="/worker" element={<WorkerDashboard />} />
           <Route path="/b/:slug" element={<WhiteLabelBooking />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
