@@ -16,11 +16,12 @@ const Auth = () => {
   const isWorker = searchParams.get("role") === "worker";
 
   useEffect(() => {
+    const redirect = isWorker ? "/worker" : "/dashboard";
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session) navigate("/dashboard");
+      if (session) navigate(redirect);
     });
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) navigate("/dashboard");
+      if (session) navigate(redirect);
     });
     return () => subscription.unsubscribe();
   }, [navigate]);
