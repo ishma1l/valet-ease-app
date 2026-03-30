@@ -58,8 +58,15 @@ const Auth = () => {
         className="w-full max-w-sm">
         <div className="text-center mb-8">
           <h1 className="text-2xl font-extrabold tracking-tight text-foreground">GLOSS.</h1>
+          {isWorker && (
+            <span className="inline-block mt-2 px-3 py-1 rounded-full bg-accent text-accent-foreground text-xs font-bold tracking-wide">
+              WORKER LOGIN
+            </span>
+          )}
           <p className="text-muted-foreground text-sm mt-1">
-            {mode === "login" ? "Sign in to your business dashboard" : "Create your business account"}
+            {isWorker
+              ? "Sign in to access your worker dashboard"
+              : mode === "login" ? "Sign in to your business dashboard" : "Create your business account"}
           </p>
         </div>
 
