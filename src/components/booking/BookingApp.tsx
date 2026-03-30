@@ -21,6 +21,9 @@ import carSedan from "@/assets/car-sedan.png";
 import carSuv from "@/assets/car-suv.png";
 import carVan from "@/assets/car-van.png";
 
+/* ─── Default business ID (Valet Ease main) ─── */
+const DEFAULT_BUSINESS_ID = "00000000-0000-0000-0000-000000000001";
+
 /* ─── Types ─── */
 type PlanType = "once" | "weekly" | "monthly";
 
