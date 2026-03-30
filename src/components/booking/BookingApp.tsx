@@ -13,7 +13,7 @@ import {
   Shield, ShieldCheck, Check, Plus,
   Droplets, Car, LocateFixed, Navigation,
   Wind, Paintbrush, SprayCan, Armchair, Home,
-  Sun, CloudSun, Sunset, AlertCircle, Loader2,
+  Sun, CloudSun, Sunset, AlertCircle, Loader2, XCircle,
 } from "lucide-react";
 import carIllustration from "@/assets/car-illustration.png";
 import carSmall from "@/assets/car-small.png";
