@@ -101,7 +101,12 @@ const BookingApp = () => {
   const scrollRef = useRef<HTMLDivElement>(null);
   const autoAdvanceTimer = useRef<ReturnType<typeof setTimeout>>();
 
-  const goTo = useCallback((to: number) => {
+  useEffect(() => {
+    supabase.from("businesses").select("id").eq("slug", DEFAULT_BUSINESS_SLUG).maybeSingle()
+      .then(({ data }) => { if (data) setDefaultBusinessId(data.id); });
+  }, []);
+
+
     setDir(to > step ? 1 : -1);
     setStep(to);
     scrollRef.current?.scrollTo({ top: 0, behavior: "instant" });
