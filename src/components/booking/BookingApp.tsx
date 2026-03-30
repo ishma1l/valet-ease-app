@@ -21,6 +21,9 @@ import carSedan from "@/assets/car-sedan.png";
 import carSuv from "@/assets/car-suv.png";
 import carVan from "@/assets/car-van.png";
 
+/* ─── Default business slug (Valet Ease main) ─── */
+const DEFAULT_BUSINESS_SLUG = "valet-ease";
+
 /* ─── Types ─── */
 type PlanType = "once" | "weekly" | "monthly";
 
@@ -94,8 +97,14 @@ const BookingApp = () => {
     service: null, carType: null, addons: [], plan: "weekly" as PlanType, date: undefined,
     window: "", name: "", phone: "", address: "", postcode: "",
   });
+  const [defaultBusinessId, setDefaultBusinessId] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const autoAdvanceTimer = useRef<ReturnType<typeof setTimeout>>();
+
+  useEffect(() => {
+    supabase.from("businesses").select("id").eq("slug", DEFAULT_BUSINESS_SLUG).maybeSingle()
+      .then(({ data }) => { if (data) setDefaultBusinessId(data.id); });
+  }, []);
 
   const goTo = useCallback((to: number) => {
     setDir(to > step ? 1 : -1);
@@ -156,6 +165,7 @@ const BookingApp = () => {
       booking_date: booking.date ? format(booking.date, "yyyy-MM-dd") : "",
       express: false,
       total_price: total,
+      business_id: defaultBusinessId,
     });
     setSubmitting(false);
     if (error) { toast.error("Booking failed. Please try again."); return; }
