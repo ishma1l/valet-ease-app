@@ -335,11 +335,14 @@ const BookingApp = () => {
         </motion.div>
 
         <motion.div initial={{ y: 12, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.85 }}
-          className="mt-6">
+          className="mt-6 space-y-3">
           <motion.button whileTap={{ scale: 0.97 }} onClick={reset}
             className="w-full bg-foreground text-background font-bold text-[15px] h-14 rounded-2xl flex items-center justify-center gap-2 active:scale-[0.97] transition-transform">
             Book Another Wash <ChevronRight size={16} />
           </motion.button>
+          {confirmedBookingId && (
+            <CancelBookingButton bookingId={confirmedBookingId} onCancelled={reset} />
+          )}
         </motion.div>
       </div>
     );
