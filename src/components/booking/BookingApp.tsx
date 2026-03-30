@@ -1287,10 +1287,11 @@ interface LiveTrackingProps {
   activePlan: typeof PLANS[number];
   servicePrice: number;
   addonsTotal: number;
+  confirmedBookingId?: string | null;
   onReset: () => void;
 }
 
-const LiveTracking = ({ booking, svc, carType, total, baseTotal, discountPct, activePlan, servicePrice, addonsTotal, onReset }: LiveTrackingProps) => {
+const LiveTracking = ({ booking, svc, carType, total, baseTotal, discountPct, activePlan, servicePrice, addonsTotal, confirmedBookingId, onReset }: LiveTrackingProps) => {
   const [stageIdx, setStageIdx] = useState(0);
   const [eta, setEta] = useState(18);
   const [workerName, setWorkerName] = useState<string | null>(null);
