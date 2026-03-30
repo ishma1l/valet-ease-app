@@ -28,7 +28,7 @@ const App = () => (
           <Route path="/auth" element={<Auth />} />
           <Route path="/dashboard" element={<BusinessDashboard />} />
           <Route path="/admin" element={<AdminGuard><AdminDashboard /></AdminGuard>} />
-          <Route path="/worker" element={<WorkerDashboard />} />
+          <Route path="/worker" element={<AuthGuard><WorkerDashboard /></AuthGuard>} />
           <Route path="/b/:slug" element={<WhiteLabelBooking />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
