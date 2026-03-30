@@ -159,6 +159,7 @@ const BookingApp = () => {
       booking_date: booking.date ? format(booking.date, "yyyy-MM-dd") : "",
       express: false,
       total_price: total,
+      business_id: DEFAULT_BUSINESS_ID,
     });
     setSubmitting(false);
     if (error) { toast.error("Booking failed. Please try again."); return; }
