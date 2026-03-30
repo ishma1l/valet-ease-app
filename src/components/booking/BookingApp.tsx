@@ -174,7 +174,7 @@ const BookingApp = () => {
 
   const confirm = async () => {
     setSubmitting(true);
-    const { error } = await supabase.from("bookings").insert({
+    const { data, error } = await supabase.from("bookings").insert({
       customer_name: booking.name,
       phone: booking.phone,
       address: booking.address,
@@ -186,9 +186,10 @@ const BookingApp = () => {
       express: false,
       total_price: total,
       business_id: defaultBusinessId,
-    });
+    }).select("id").single();
     setSubmitting(false);
     if (error) { toast.error("Booking failed. Please try again."); return; }
+    if (data) setConfirmedBookingId(data.id);
     pushNotification({
       title: "Booking confirmed!",
       body: `Your ${svc?.title} is booked for ${booking.date ? format(booking.date, "EEE, d MMM") : ""}. We'll find a cleaner shortly.`,
