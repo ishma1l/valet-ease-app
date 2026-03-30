@@ -1235,12 +1235,16 @@ const InputField = ({ icon: Icon, label, placeholder, value, onChange, type = "t
 
 /* ─── Live Tracking Component ─── */
 
-const TRACKING_STAGES = [
-  { id: "confirmed", label: "Booking confirmed", desc: "Your booking has been received", icon: CheckCircle2, eta: null },
-  { id: "assigned", label: "Cleaner assigned", desc: "James M. is preparing for your wash", icon: User, eta: null },
-  { id: "onway", label: "On the way", desc: "James is heading to your location", icon: Navigation, eta: "12 min away" },
-  { id: "arrived", label: "Arrived", desc: "James has arrived — wash starting now", icon: MapPin, eta: null },
-];
+const getTrackingStages = (cleanerName: string | null) => {
+  const name = cleanerName || "Your cleaner";
+  const firstName = name.split(" ")[0];
+  return [
+    { id: "confirmed", label: "Booking confirmed", desc: "Your booking has been received", icon: CheckCircle2, eta: null },
+    { id: "assigned", label: "Cleaner assigned", desc: `${name} is preparing for your wash`, icon: User, eta: null },
+    { id: "onway", label: "On the way", desc: `${firstName} is heading to your location`, icon: Navigation, eta: "12 min away" },
+    { id: "arrived", label: "Arrived", desc: `${firstName} has arrived — wash starting now`, icon: MapPin, eta: null },
+  ];
+};
 
 interface LiveTrackingProps {
   booking: BookingState;
