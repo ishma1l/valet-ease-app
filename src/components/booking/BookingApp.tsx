@@ -1301,7 +1301,7 @@ const CancelBookingButton = ({ bookingId, onCancelled }: { bookingId: string; on
       toast.error("Failed to cancel booking");
       return;
     }
-    toast.success("Booking cancelled successfully");
+    toast.success(hasStripePayment ? "Booking cancelled — refund requested" : "Booking cancelled successfully");
     setShowConfirm(false);
     onCancelled();
   };
