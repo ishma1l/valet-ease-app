@@ -14,6 +14,8 @@ import Auth from "./pages/Auth.tsx";
 import ResetPassword from "./pages/ResetPassword.tsx";
 import BusinessDashboard from "./pages/BusinessDashboard.tsx";
 import WhiteLabelBooking from "./pages/WhiteLabelBooking.tsx";
+import BookingSuccess from "./pages/BookingSuccess.tsx";
+import BookingCancelled from "./pages/BookingCancelled.tsx";
 
 const queryClient = new QueryClient();
 
@@ -32,6 +34,8 @@ const App = () => (
           <Route path="/admin" element={<AdminGuard><AdminDashboard /></AdminGuard>} />
           <Route path="/worker" element={<AuthGuard><WorkerDashboard /></AuthGuard>} />
           <Route path="/b/:slug" element={<WhiteLabelBooking />} />
+          <Route path="/booking-success" element={<BookingSuccess />} />
+          <Route path="/booking-cancelled" element={<BookingCancelled />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

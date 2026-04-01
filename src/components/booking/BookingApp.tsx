@@ -175,7 +175,8 @@ const BookingApp = () => {
 
   const confirm = async () => {
     setSubmitting(true);
-    const { data, error } = await supabase.from("bookings").insert({
+
+    const bookingData = {
       customer_name: booking.name,
       phone: booking.phone,
       address: booking.address,
@@ -184,19 +185,35 @@ const BookingApp = () => {
       service_price: servicePrice,
       time_window: booking.window,
       booking_date: booking.date ? format(booking.date, "yyyy-MM-dd") : "",
-      express: false,
       total_price: total,
       business_id: defaultBusinessId,
-    }).select("id").single();
-    setSubmitting(false);
-    if (error) { toast.error("Booking failed. Please try again."); return; }
-    if (data) setConfirmedBookingId(data.id);
-    pushNotification({
-      title: "Booking confirmed!",
-      body: `Your ${svc?.title} is booked for ${booking.date ? format(booking.date, "EEE, d MMM") : ""}. We'll find a cleaner shortly.`,
-      icon: "confirmed",
-    });
-    setConfirmed(true);
+    };
+
+    // Store booking data in sessionStorage for the success page
+    sessionStorage.setItem("pending_booking", JSON.stringify(bookingData));
+
+    try {
+      const { data, error } = await supabase.functions.invoke("create-checkout-session", {
+        body: {
+          serviceName: svc?.title || booking.service,
+          price: total,
+          customerEmail: booking.phone + "@booking.local", // placeholder email for guest checkout
+          bookingData,
+        },
+      });
+
+      if (error || !data?.url) {
+        toast.error("Failed to start payment. Please try again.");
+        setSubmitting(false);
+        return;
+      }
+
+      // Redirect to Stripe Checkout
+      window.location.href = data.url;
+    } catch (err) {
+      toast.error("Something went wrong. Please try again.");
+      setSubmitting(false);
+    }
   };
 
   const canContinue = () => {
