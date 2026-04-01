@@ -488,8 +488,8 @@ const BookingsView = ({ bookings, updateStatus, workers, assignWorker }: { booki
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-2 pt-1 border-t border-muted">
-              {(["pending", "assigned", "completed"] as BookingStatus[]).map((s) => {
+            <div className="flex items-center gap-2 pt-1 border-t border-muted flex-wrap">
+              {(["pending", "assigned", "completed", "cancelled"] as BookingStatus[]).map((s) => {
                 const config = STATUS_CONFIG[s];
                 const Icon = config.icon;
                 const isActive = b.status === s;
@@ -502,6 +502,15 @@ const BookingsView = ({ bookings, updateStatus, workers, assignWorker }: { booki
                 );
               })}
             </div>
+            {/* Refund badge for cancelled bookings */}
+            {b.status === "cancelled" && (b as any).refund_requested && (
+              <div className="flex items-center gap-2 pt-2">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-warning-muted text-foreground text-xs font-bold ring-1 ring-warning/30">
+                  <PoundSterling size={12} /> Refund Pending
+                </span>
+                <span className="text-[10px] text-muted-foreground">Processed within 5–10 business days</span>
+              </div>
+            )}
             {/* Worker assignment */}
             <div className="flex items-center gap-3 pt-2 border-t border-muted">
               <div className="flex items-center gap-1.5 text-muted-foreground shrink-0">
