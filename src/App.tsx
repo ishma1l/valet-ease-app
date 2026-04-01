@@ -11,6 +11,7 @@ import { AdminGuard } from "@/components/AdminGuard";
 import { AuthGuard } from "@/components/AuthGuard";
 import WorkerDashboard from "./pages/WorkerDashboard.tsx";
 import Auth from "./pages/Auth.tsx";
+import ResetPassword from "./pages/ResetPassword.tsx";
 import BusinessDashboard from "./pages/BusinessDashboard.tsx";
 import WhiteLabelBooking from "./pages/WhiteLabelBooking.tsx";
 
