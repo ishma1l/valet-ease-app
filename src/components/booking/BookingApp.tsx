@@ -1289,7 +1289,13 @@ const CancelBookingButton = ({ bookingId, onCancelled }: { bookingId: string; on
 
   const handleCancel = async () => {
     setCancelling(true);
-    const { error } = await supabase.from("bookings").update({ status: "cancelled" as any }).eq("id", bookingId);
+    // Check if booking has a stripe_session_id to determine if refund is needed
+    const { data: bookingData } = await (supabase.from("bookings").select("stripe_session_id") as any).eq("id", bookingId).maybeSingle();
+    const hasStripePayment = !!bookingData?.stripe_session_id;
+    const { error } = await supabase.from("bookings").update({
+      status: "cancelled" as any,
+      ...(hasStripePayment ? { refund_requested: true } : {}),
+    } as any).eq("id", bookingId);
     setCancelling(false);
     if (error) {
       toast.error("Failed to cancel booking");
