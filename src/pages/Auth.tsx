@@ -100,7 +100,7 @@ const Auth = () => {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-3">
-          {mode === "signup" && !isWorker && (
+          {mode === "signup" && !isWorker && mode !== "forgot" && (
             <div className="grid grid-cols-2 gap-2 mb-1">
               {([
                 { id: "business" as AccountType, label: "Business", desc: "Manage bookings", icon: Briefcase },
