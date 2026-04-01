@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 type AccountType = "business" | "worker";
 
 const Auth = () => {
-  const [mode, setMode] = useState<"login" | "signup">("login");
+  const [mode, setMode] = useState<"login" | "signup" | "forgot">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
@@ -38,6 +38,16 @@ const Auth = () => {
     e.preventDefault();
     setLoading(true);
     try {
+      if (mode === "forgot") {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/reset-password`,
+        });
+        if (error) throw error;
+        toast.success("Check your email for the reset link");
+        setMode("login");
+        setLoading(false);
+        return;
+      }
       if (mode === "signup") {
         const { data, error } = await supabase.auth.signUp({
           email,
@@ -84,6 +94,7 @@ const Auth = () => {
           <p className="text-muted-foreground text-sm mt-1">
             {isWorker
               ? "Sign in to access your worker dashboard"
+              : mode === "forgot" ? "Enter your email to reset your password"
               : mode === "login" ? "Sign in to your dashboard" : "Create your account"}
           </p>
         </div>
@@ -134,25 +145,41 @@ const Auth = () => {
             <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)}
               required className="w-full h-12 pl-10 pr-4 rounded-xl border border-border bg-card text-sm font-medium focus:ring-2 focus:ring-ring focus:border-transparent outline-none transition-all" />
           </div>
-          <div className="relative">
-            <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)}
-              required minLength={6} className="w-full h-12 pl-10 pr-4 rounded-xl border border-border bg-card text-sm font-medium focus:ring-2 focus:ring-ring focus:border-transparent outline-none transition-all" />
-          </div>
+          {mode !== "forgot" && (
+            <div className="relative">
+              <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)}
+                required minLength={6} className="w-full h-12 pl-10 pr-4 rounded-xl border border-border bg-card text-sm font-medium focus:ring-2 focus:ring-ring focus:border-transparent outline-none transition-all" />
+            </div>
+          )}
+          {mode === "login" && (
+            <div className="text-right -mt-1">
+              <button type="button" onClick={() => setMode("forgot")}
+                className="text-xs text-muted-foreground hover:text-foreground hover:underline transition-colors">
+                Forgot password?
+              </button>
+            </div>
+          )}
           <motion.button whileTap={{ scale: 0.97 }} type="submit" disabled={loading}
             className="w-full h-12 bg-foreground text-background rounded-xl font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50 transition-opacity">
             {loading ? <Loader2 size={18} className="animate-spin" /> : (
-              <>{mode === "login" ? "Sign In" : "Create Account"} <ArrowRight size={16} /></>
+              <>{mode === "forgot" ? "Send Reset Link" : mode === "login" ? "Sign In" : "Create Account"} <ArrowRight size={16} /></>
             )}
           </motion.button>
         </form>
 
         <p className="text-center text-sm text-muted-foreground mt-5">
-          {mode === "login" ? "Don't have an account?" : "Already have an account?"}{" "}
-          <button onClick={() => setMode(mode === "login" ? "signup" : "login")}
-            className="font-bold text-foreground hover:underline">
-            {mode === "login" ? "Sign up" : "Sign in"}
-          </button>
+          {mode === "forgot" ? (
+            <button onClick={() => setMode("login")} className="font-bold text-foreground hover:underline">Back to login</button>
+          ) : (
+            <>
+              {mode === "login" ? "Don't have an account?" : "Already have an account?"}{" "}
+              <button onClick={() => setMode(mode === "login" ? "signup" : "login")}
+                className="font-bold text-foreground hover:underline">
+                {mode === "login" ? "Sign up" : "Sign in"}
+              </button>
+            </>
+          )}
         </p>
       </motion.div>
     </div>

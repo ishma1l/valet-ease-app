@@ -11,6 +11,7 @@ import { AdminGuard } from "@/components/AdminGuard";
 import { AuthGuard } from "@/components/AuthGuard";
 import WorkerDashboard from "./pages/WorkerDashboard.tsx";
 import Auth from "./pages/Auth.tsx";
+import ResetPassword from "./pages/ResetPassword.tsx";
 import BusinessDashboard from "./pages/BusinessDashboard.tsx";
 import WhiteLabelBooking from "./pages/WhiteLabelBooking.tsx";
 
@@ -26,6 +27,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/auth" element={<Auth />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/dashboard" element={<BusinessDashboard />} />
           <Route path="/admin" element={<AdminGuard><AdminDashboard /></AdminGuard>} />
           <Route path="/worker" element={<AuthGuard><WorkerDashboard /></AuthGuard>} />
