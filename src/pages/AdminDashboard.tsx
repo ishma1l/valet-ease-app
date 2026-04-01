@@ -88,10 +88,23 @@ const AdminDashboard = () => {
   }, []);
 
   const updateStatus = async (id: string, status: BookingStatus) => {
-    await supabase.from("bookings").update({ status }).eq("id", id);
-    setBookings((prev) =>
-      prev.map((b) => (b.id === id ? { ...b, status } : b))
-    );
+    // If cancelling a paid booking, also set refund_requested
+    if (status === "cancelled") {
+      const booking = bookings.find((b) => b.id === id);
+      const hasStripePayment = !!(booking as any)?.stripe_session_id;
+      await supabase.from("bookings").update({
+        status,
+        ...(hasStripePayment ? { refund_requested: true } : {}),
+      } as any).eq("id", id);
+      setBookings((prev) =>
+        prev.map((b) => (b.id === id ? { ...b, status, ...(hasStripePayment ? { refund_requested: true } : {}) } as any : b))
+      );
+    } else {
+      await supabase.from("bookings").update({ status }).eq("id", id);
+      setBookings((prev) =>
+        prev.map((b) => (b.id === id ? { ...b, status } : b))
+      );
+    }
   };
 
   const assignWorker = async (bookingId: string, workerId: string | null) => {
@@ -475,8 +488,8 @@ const BookingsView = ({ bookings, updateStatus, workers, assignWorker }: { booki
                 </div>
               </div>
             </div>
-            <div className="flex items-center gap-2 pt-1 border-t border-muted">
-              {(["pending", "assigned", "completed"] as BookingStatus[]).map((s) => {
+            <div className="flex items-center gap-2 pt-1 border-t border-muted flex-wrap">
+              {(["pending", "assigned", "completed", "cancelled"] as BookingStatus[]).map((s) => {
                 const config = STATUS_CONFIG[s];
                 const Icon = config.icon;
                 const isActive = b.status === s;
@@ -489,6 +502,15 @@ const BookingsView = ({ bookings, updateStatus, workers, assignWorker }: { booki
                 );
               })}
             </div>
+            {/* Refund badge for cancelled bookings */}
+            {b.status === "cancelled" && (b as any).refund_requested && (
+              <div className="flex items-center gap-2 pt-2">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-warning-muted text-foreground text-xs font-bold ring-1 ring-warning/30">
+                  <PoundSterling size={12} /> Refund Pending
+                </span>
+                <span className="text-[10px] text-muted-foreground">Processed within 5–10 business days</span>
+              </div>
+            )}
             {/* Worker assignment */}
             <div className="flex items-center gap-3 pt-2 border-t border-muted">
               <div className="flex items-center gap-1.5 text-muted-foreground shrink-0">

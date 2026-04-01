@@ -1,0 +1,1 @@
+ALTER TABLE public.bookings ADD COLUMN refund_requested boolean NOT NULL DEFAULT false;

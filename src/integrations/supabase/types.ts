@@ -26,6 +26,7 @@ export type Database = {
           id: string
           phone: string
           postcode: string
+          refund_requested: boolean
           service: string
           service_price: number
           status: Database["public"]["Enums"]["booking_status"]
@@ -45,6 +46,7 @@ export type Database = {
           id?: string
           phone: string
           postcode: string
+          refund_requested?: boolean
           service: string
           service_price: number
           status?: Database["public"]["Enums"]["booking_status"]
@@ -64,6 +66,7 @@ export type Database = {
           id?: string
           phone?: string
           postcode?: string
+          refund_requested?: boolean
           service?: string
           service_price?: number
           status?: Database["public"]["Enums"]["booking_status"]

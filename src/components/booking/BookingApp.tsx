@@ -1289,13 +1289,19 @@ const CancelBookingButton = ({ bookingId, onCancelled }: { bookingId: string; on
 
   const handleCancel = async () => {
     setCancelling(true);
-    const { error } = await supabase.from("bookings").update({ status: "cancelled" as any }).eq("id", bookingId);
+    // Check if booking has a stripe_session_id to determine if refund is needed
+    const { data: bookingData } = await (supabase.from("bookings").select("stripe_session_id") as any).eq("id", bookingId).maybeSingle();
+    const hasStripePayment = !!bookingData?.stripe_session_id;
+    const { error } = await supabase.from("bookings").update({
+      status: "cancelled" as any,
+      ...(hasStripePayment ? { refund_requested: true } : {}),
+    } as any).eq("id", bookingId);
     setCancelling(false);
     if (error) {
       toast.error("Failed to cancel booking");
       return;
     }
-    toast.success("Booking cancelled successfully");
+    toast.success(hasStripePayment ? "Booking cancelled — refund requested" : "Booking cancelled successfully");
     setShowConfirm(false);
     onCancelled();
   };
@@ -1308,7 +1314,7 @@ const CancelBookingButton = ({ bookingId, onCancelled }: { bookingId: string; on
           <XCircle size={16} className="text-destructive shrink-0" />
           <p className="text-sm font-bold text-foreground">Cancel this booking?</p>
         </div>
-        <p className="text-xs text-muted-foreground">This action cannot be undone. Your booking will be cancelled immediately.</p>
+        <p className="text-xs text-muted-foreground">This action cannot be undone. Your booking will be cancelled immediately. If you paid via Stripe, a refund will be requested and processed within 5–10 business days.</p>
         <div className="flex gap-2">
           <motion.button whileTap={{ scale: 0.97 }} onClick={() => setShowConfirm(false)}
             className="flex-1 h-10 rounded-xl bg-muted text-foreground font-bold text-xs">
