@@ -33,10 +33,10 @@ const BookingSuccess = () => {
         const bookingData = JSON.parse(raw);
 
         // Check if booking with this session_id already exists
-        const { data: existing } = await supabase
+        const { data: existing } = await (supabase
           .from("bookings")
-          .select("id")
-          .eq("stripe_session_id" as any, sessionId)
+          .select("id") as any)
+          .eq("stripe_session_id", sessionId)
           .maybeSingle();
 
         if (existing) {

@@ -14,6 +14,8 @@ import Auth from "./pages/Auth.tsx";
 import ResetPassword from "./pages/ResetPassword.tsx";
 import BusinessDashboard from "./pages/BusinessDashboard.tsx";
 import WhiteLabelBooking from "./pages/WhiteLabelBooking.tsx";
+import BookingSuccess from "./pages/BookingSuccess.tsx";
+import BookingCancelled from "./pages/BookingCancelled.tsx";
 
 const queryClient = new QueryClient();
 
