@@ -94,6 +94,7 @@ const Auth = () => {
           <p className="text-muted-foreground text-sm mt-1">
             {isWorker
               ? "Sign in to access your worker dashboard"
+              : mode === "forgot" ? "Enter your email to reset your password"
               : mode === "login" ? "Sign in to your dashboard" : "Create your account"}
           </p>
         </div>
