@@ -88,10 +88,23 @@ const AdminDashboard = () => {
   }, []);
 
   const updateStatus = async (id: string, status: BookingStatus) => {
-    await supabase.from("bookings").update({ status }).eq("id", id);
-    setBookings((prev) =>
-      prev.map((b) => (b.id === id ? { ...b, status } : b))
-    );
+    // If cancelling a paid booking, also set refund_requested
+    if (status === "cancelled") {
+      const booking = bookings.find((b) => b.id === id);
+      const hasStripePayment = !!(booking as any)?.stripe_session_id;
+      await supabase.from("bookings").update({
+        status,
+        ...(hasStripePayment ? { refund_requested: true } : {}),
+      } as any).eq("id", id);
+      setBookings((prev) =>
+        prev.map((b) => (b.id === id ? { ...b, status, ...(hasStripePayment ? { refund_requested: true } : {}) } as any : b))
+      );
+    } else {
+      await supabase.from("bookings").update({ status }).eq("id", id);
+      setBookings((prev) =>
+        prev.map((b) => (b.id === id ? { ...b, status } : b))
+      );
+    }
   };
 
   const assignWorker = async (bookingId: string, workerId: string | null) => {
