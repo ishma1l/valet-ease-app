@@ -29,6 +29,7 @@ export type Database = {
           service: string
           service_price: number
           status: Database["public"]["Enums"]["booking_status"]
+          stripe_session_id: string | null
           time_window: string
           total_price: number
           updated_at: string
@@ -47,6 +48,7 @@ export type Database = {
           service: string
           service_price: number
           status?: Database["public"]["Enums"]["booking_status"]
+          stripe_session_id?: string | null
           time_window: string
           total_price: number
           updated_at?: string
@@ -65,6 +67,7 @@ export type Database = {
           service?: string
           service_price?: number
           status?: Database["public"]["Enums"]["booking_status"]
+          stripe_session_id?: string | null
           time_window?: string
           total_price?: number
           updated_at?: string
