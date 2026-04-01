@@ -145,11 +145,13 @@ const Auth = () => {
             <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)}
               required className="w-full h-12 pl-10 pr-4 rounded-xl border border-border bg-card text-sm font-medium focus:ring-2 focus:ring-ring focus:border-transparent outline-none transition-all" />
           </div>
-          <div className="relative">
-            <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-            <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)}
-              required minLength={6} className="w-full h-12 pl-10 pr-4 rounded-xl border border-border bg-card text-sm font-medium focus:ring-2 focus:ring-ring focus:border-transparent outline-none transition-all" />
-          </div>
+          {mode !== "forgot" && (
+            <div className="relative">
+              <Lock size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)}
+                required minLength={6} className="w-full h-12 pl-10 pr-4 rounded-xl border border-border bg-card text-sm font-medium focus:ring-2 focus:ring-ring focus:border-transparent outline-none transition-all" />
+            </div>
+          )}
           {mode === "login" && (
             <div className="text-right -mt-1">
               <button type="button" onClick={() => setMode("forgot")}
