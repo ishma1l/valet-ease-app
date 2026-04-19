@@ -36,6 +36,7 @@ interface BookingState {
   window: string;
   name: string;
   phone: string;
+  email: string;
   address: string;
   postcode: string;
 }
