@@ -182,6 +182,7 @@ const BookingApp = () => {
     const bookingData = {
       customer_name: booking.name,
       phone: booking.phone,
+      email: booking.email,
       address: booking.address,
       postcode: booking.postcode,
       service: booking.service!,
