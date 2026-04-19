@@ -22,6 +22,7 @@ export type Database = {
           business_id: string | null
           created_at: string
           customer_name: string
+          email: string | null
           express: boolean
           id: string
           phone: string
@@ -42,6 +43,7 @@ export type Database = {
           business_id?: string | null
           created_at?: string
           customer_name: string
+          email?: string | null
           express?: boolean
           id?: string
           phone: string
@@ -62,6 +64,7 @@ export type Database = {
           business_id?: string | null
           created_at?: string
           customer_name?: string
+          email?: string | null
           express?: boolean
           id?: string
           phone?: string
