@@ -1077,6 +1077,9 @@ const BookingApp = () => {
                     onChange={(v) => { setBooking({ ...booking, phone: v }); setFieldErrors((e) => ({ ...e, phone: "" })); }}
                     error={fieldErrors.phone} />
                 </div>
+                <InputField icon={Mail} label="Email" placeholder="you@example.com" type="email" value={booking.email}
+                  onChange={(v) => { setBooking({ ...booking, email: v }); setFieldErrors((e) => ({ ...e, email: "" })); }}
+                  error={fieldErrors.email} />
               </motion.div>
 
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}
