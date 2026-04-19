@@ -225,7 +225,7 @@ const BookingApp = () => {
     if (step === 1) return !!booking.carType;
     if (step === 2) return !!booking.date;
     if (step === 3) return !!booking.window;
-    if (step === 4) return !!(booking.name && booking.phone && booking.address && booking.postcode);
+    if (step === 4) return !!(booking.name && booking.phone && booking.email && booking.address && booking.postcode);
     if (step === 5) return true;
     return true;
   };
