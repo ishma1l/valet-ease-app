@@ -229,7 +229,7 @@ const BookingApp = () => {
 
   const reset = () => {
     setDir(1); setStep(0); setConfirmed(false);
-    setBooking({ service: null, carType: null, addons: [], plan: "weekly", date: undefined, window: "", name: "", phone: "", address: "", postcode: "" });
+    setBooking({ service: null, carType: null, addons: [], plan: "weekly", date: undefined, window: "", name: "", phone: "", email: "", address: "", postcode: "" });
   };
 
   const dateOptions = Array.from({ length: 14 }, (_, i) => addDays(new Date(), i + 1));
