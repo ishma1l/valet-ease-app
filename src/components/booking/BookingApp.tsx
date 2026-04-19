@@ -120,17 +120,19 @@ const BookingApp = () => {
     const errors: Record<string, string> = {};
     const name = booking.name.trim();
     const phone = booking.phone.replace(/\s/g, "");
+    const email = booking.email.trim();
     const postcode = booking.postcode.trim();
     const address = booking.address.trim();
 
     if (name.length < 2) errors.name = "Name must be at least 2 characters";
     if (!/^07\d{9}$/.test(phone)) errors.phone = "Enter a valid UK mobile (07XXXXXXXXX)";
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.email = "Enter a valid email address";
     if (!/^[A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2}$/i.test(postcode)) errors.postcode = "Enter a valid UK postcode";
     if (!address) errors.address = "Address is required";
 
     setFieldErrors(errors);
     return Object.keys(errors).length === 0;
-  }, [booking.name, booking.phone, booking.postcode, booking.address]);
+  }, [booking.name, booking.phone, booking.email, booking.postcode, booking.address]);
 
   const next = useCallback(() => {
     if (step === 4 && !validateStep4()) return;
