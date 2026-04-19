@@ -97,7 +97,7 @@ const BookingApp = () => {
   const [showAllDates, setShowAllDates] = useState(false);
   const [booking, setBooking] = useState<BookingState>({
     service: null, carType: null, addons: [], plan: "weekly" as PlanType, date: undefined,
-    window: "", name: "", phone: "", address: "", postcode: "",
+    window: "", name: "", phone: "", email: "", address: "", postcode: "",
   });
   const [defaultBusinessId, setDefaultBusinessId] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
