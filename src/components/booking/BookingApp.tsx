@@ -9,7 +9,7 @@ import { format, addDays, isSameDay } from "date-fns";
 import { cn } from "@/lib/utils";
 import {
   MapPin, Clock, CheckCircle2, ChevronRight, ArrowLeft,
-  CalendarIcon, User, Phone, Sparkles, Package, Repeat, Crown, Zap, TrendingDown,
+  CalendarIcon, User, Phone, Mail, Sparkles, Package, Repeat, Crown, Zap, TrendingDown,
   Shield, ShieldCheck, Check, Plus,
   Droplets, Car, LocateFixed, Navigation,
   Wind, Paintbrush, SprayCan, Armchair, Home,
@@ -36,6 +36,7 @@ interface BookingState {
   window: string;
   name: string;
   phone: string;
+  email: string;
   address: string;
   postcode: string;
 }
@@ -96,7 +97,7 @@ const BookingApp = () => {
   const [showAllDates, setShowAllDates] = useState(false);
   const [booking, setBooking] = useState<BookingState>({
     service: null, carType: null, addons: [], plan: "weekly" as PlanType, date: undefined,
-    window: "", name: "", phone: "", address: "", postcode: "",
+    window: "", name: "", phone: "", email: "", address: "", postcode: "",
   });
   const [defaultBusinessId, setDefaultBusinessId] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -119,17 +120,19 @@ const BookingApp = () => {
     const errors: Record<string, string> = {};
     const name = booking.name.trim();
     const phone = booking.phone.replace(/\s/g, "");
+    const email = booking.email.trim();
     const postcode = booking.postcode.trim();
     const address = booking.address.trim();
 
     if (name.length < 2) errors.name = "Name must be at least 2 characters";
     if (!/^07\d{9}$/.test(phone)) errors.phone = "Enter a valid UK mobile (07XXXXXXXXX)";
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.email = "Enter a valid email address";
     if (!/^[A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2}$/i.test(postcode)) errors.postcode = "Enter a valid UK postcode";
     if (!address) errors.address = "Address is required";
 
     setFieldErrors(errors);
     return Object.keys(errors).length === 0;
-  }, [booking.name, booking.phone, booking.postcode, booking.address]);
+  }, [booking.name, booking.phone, booking.email, booking.postcode, booking.address]);
 
   const next = useCallback(() => {
     if (step === 4 && !validateStep4()) return;
@@ -179,6 +182,7 @@ const BookingApp = () => {
     const bookingData = {
       customer_name: booking.name,
       phone: booking.phone,
+      email: booking.email,
       address: booking.address,
       postcode: booking.postcode,
       service: booking.service!,
@@ -197,7 +201,7 @@ const BookingApp = () => {
         body: {
           serviceName: svc?.title || booking.service,
           price: total,
-          customerEmail: booking.phone + "@booking.local", // placeholder email for guest checkout
+          customerEmail: booking.email,
           bookingData,
         },
       });
@@ -221,14 +225,14 @@ const BookingApp = () => {
     if (step === 1) return !!booking.carType;
     if (step === 2) return !!booking.date;
     if (step === 3) return !!booking.window;
-    if (step === 4) return !!(booking.name && booking.phone && booking.address && booking.postcode);
+    if (step === 4) return !!(booking.name && booking.phone && booking.email && booking.address && booking.postcode);
     if (step === 5) return true;
     return true;
   };
 
   const reset = () => {
     setDir(1); setStep(0); setConfirmed(false);
-    setBooking({ service: null, carType: null, addons: [], plan: "weekly", date: undefined, window: "", name: "", phone: "", address: "", postcode: "" });
+    setBooking({ service: null, carType: null, addons: [], plan: "weekly", date: undefined, window: "", name: "", phone: "", email: "", address: "", postcode: "" });
   };
 
   const dateOptions = Array.from({ length: 14 }, (_, i) => addDays(new Date(), i + 1));
@@ -1073,6 +1077,9 @@ const BookingApp = () => {
                     onChange={(v) => { setBooking({ ...booking, phone: v }); setFieldErrors((e) => ({ ...e, phone: "" })); }}
                     error={fieldErrors.phone} />
                 </div>
+                <InputField icon={Mail} label="Email" placeholder="you@example.com" type="email" value={booking.email}
+                  onChange={(v) => { setBooking({ ...booking, email: v }); setFieldErrors((e) => ({ ...e, email: "" })); }}
+                  error={fieldErrors.email} />
               </motion.div>
 
               <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }}
