@@ -201,7 +201,7 @@ const BookingApp = () => {
         body: {
           serviceName: svc?.title || booking.service,
           price: total,
-          customerEmail: booking.phone + "@booking.local", // placeholder email for guest checkout
+          customerEmail: booking.email,
           bookingData,
         },
       });
